@@ -1,0 +1,17 @@
+{
+  "_comment": "build-config.json · 构建时由 build_index.py 注入到 index.html",
+  "build_version": "5.0.0",
+  "supabase": {
+    "enabled": true,
+    "url": "https://sbtvdsxyvkyunydpngyb.supabase.co",
+    "anon_key": "sb_publishable_MaRv_19aePTMYgMtxMOuZw_z_oFT0GJ"
+  },
+  "sync": {
+    "auto_push_interval_ms": 5000,
+    "auto_pull_on_startup": true,
+    "conflict_strategy": "last_write_wins"
+  },
+  "pwa": {
+    "install_prompt_enabled": true
+  }
+}

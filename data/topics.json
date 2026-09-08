@@ -1,0 +1,221 @@
+[
+  {
+    "topic_id": "business",
+    "name_zh": "商务汇报",
+    "name_en": "PM English (Reporting)",
+    "icon": "💼",
+    "order": 0,
+    "color": "#0f766e",
+    "tags": [
+      "pm",
+      "reporting",
+      "mill-floor",
+      "metallurgy",
+      "stakeholders"
+    ],
+    "blurb": "向德国老板汇报项目用的 158 张金句：会议/进度/风险/产线/调试/付款/变更。",
+    "card_count": 158,
+    "subscenes": [
+      {
+        "id": "meeting",
+        "name_zh": "M1 会议开场与收尾",
+        "module": "M1"
+      },
+      {
+        "id": "schedule",
+        "name_zh": "M2 进度与里程碑",
+        "module": "M2"
+      },
+      {
+        "id": "data",
+        "name_zh": "M3 数据与趋势描述",
+        "module": "M3"
+      },
+      {
+        "id": "risks",
+        "name_zh": "M4 风险与问题升级",
+        "module": "M4"
+      },
+      {
+        "id": "resources",
+        "name_zh": "M5 资源与人力",
+        "module": "M5"
+      },
+      {
+        "id": "mill",
+        "name_zh": "M6 产线与机械设备",
+        "module": "M6"
+      },
+      {
+        "id": "commissioning",
+        "name_zh": "M7 调试与验收",
+        "module": "M7"
+      },
+      {
+        "id": "payments",
+        "name_zh": "M8 收款与催款",
+        "module": "M8"
+      },
+      {
+        "id": "scope",
+        "name_zh": "M9 范围与变更",
+        "module": "M9"
+      },
+      {
+        "id": "spareparts",
+        "name_zh": "M10 备件与售后",
+        "module": "M10"
+      },
+      {
+        "id": "cost",
+        "name_zh": "M11 成本与预算",
+        "module": "M11"
+      },
+      {
+        "id": "stakeholders",
+        "name_zh": "M12 干系人与沟通",
+        "module": "M12"
+      }
+    ]
+  },
+  {
+    "topic_id": "kitchen",
+    "name_zh": "厨房工具",
+    "name_en": "Kitchen & Cooking",
+    "icon": "🍳",
+    "order": 1,
+    "color": "#f59e0b",
+    "tags": [
+      "cooking",
+      "kitchenware",
+      "dining"
+    ],
+    "blurb": "从下厨刀铲到餐具杯罐，会做饭就要会认得。"
+  },
+  {
+    "topic_id": "fruit",
+    "name_zh": "水果",
+    "name_en": "Fruits",
+    "icon": "🍎",
+    "order": 2,
+    "color": "#10b981",
+    "tags": [
+      "food",
+      "grocery",
+      "nutrition"
+    ],
+    "blurb": "逛超市、点单、健康饮食天天碰到的水果词汇。"
+  },
+  {
+    "topic_id": "living",
+    "name_zh": "客厅工具",
+    "name_en": "Living Room",
+    "icon": "🧻",
+    "order": 3,
+    "color": "#3b82f6",
+    "tags": [
+      "home",
+      "furniture",
+      "appliances"
+    ],
+    "blurb": "从沙发到电视，从吸尘器到花盆——客厅里每一件家什的英文。"
+  },
+  {
+    "topic_id": "vegetable",
+    "name_zh": "蔬菜",
+    "name_en": "Vegetables",
+    "icon": "🥜",
+    "order": 4,
+    "color": "#22c55e",
+    "tags": [
+      "food",
+      "grocery",
+      "cooking"
+    ],
+    "blurb": "买菜、做菜、点沙拉都要用到的蔬菜名。"
+  },
+  {
+    "topic_id": "transport",
+    "name_zh": "出行交通",
+    "name_en": "Transport & Travel",
+    "icon": "🚗",
+    "order": 5,
+    "color": "#6366f1",
+    "tags": [
+      "travel",
+      "commute",
+      "city"
+    ],
+    "blurb": "通勤、出差、问路、搭机时的高频表达。"
+  },
+  {
+    "topic_id": "shopping",
+    "name_zh": "购物消费",
+    "name_en": "Shopping",
+    "icon": "🛍️",
+    "order": 6,
+    "color": "#ec4899",
+    "tags": [
+      "retail",
+      "money",
+      "daily"
+    ],
+    "blurb": "结账、退换货、比价、砍价一个都不能不会。"
+  },
+  {
+    "topic_id": "health",
+    "name_zh": "健康医疗",
+    "name_en": "Health & Medical",
+    "icon": "💊",
+    "order": 7,
+    "color": "#ef4444",
+    "tags": [
+      "body",
+      "clinic",
+      "wellness"
+    ],
+    "blurb": "看医生、买药、描述症状的实用说法。"
+  },
+  {
+    "topic_id": "social",
+    "name_zh": "社交日常",
+    "name_en": "Social & Daily Life",
+    "icon": "👥",
+    "order": 8,
+    "color": "#a855f7",
+    "tags": [
+      "communication",
+      "relationship",
+      "small-talk"
+    ],
+    "blurb": "寒暄、邀约、道歉、道谢——社交润滑剂。"
+  },
+  {
+    "topic_id": "dining",
+    "name_zh": "餐饮点单",
+    "name_en": "Dining Out",
+    "icon": "🍽️",
+    "order": 9,
+    "color": "#f97316",
+    "tags": [
+      "restaurant",
+      "food",
+      "service"
+    ],
+    "blurb": "进餐厅到买单全流程，含服务用语。"
+  },
+  {
+    "topic_id": "home",
+    "name_zh": "家居家务",
+    "name_en": "Home & Chores",
+    "icon": "🏠",
+    "order": 10,
+    "color": "#0891b2",
+    "tags": [
+      "housework",
+      "maintenance",
+      "daily"
+    ],
+    "blurb": "打扫、洗衣、维修、收纳，居家生活动词与名词。"
+  }
+]

@@ -1,0 +1,43 @@
+# Build artifacts
+index.html
+*.pyc
+__pycache__/
+
+# Dependencies
+node_modules/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test artifacts
+test-results/
+coverage/
+.nyc_output/
+
+# Audio (生成产物,可重新生成)
+audio/
+
+# Supabase local config (如果有)
+supabase/.temp/
+
+# 临时文件
+*.tmp
+index.html.tmp
