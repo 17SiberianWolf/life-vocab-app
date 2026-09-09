@@ -1602,7 +1602,27 @@
   // ============================================================
   // 视图切换 (hash 路由)
   // ============================================================
+  // ============================================================
+  // 游戏生命周期: 离开视图时彻底停止 (定时器/待执行回调/语音播报)
+  // ============================================================
+  function stopMatchGame() { stopMatchTimer(); STATE.matchRound = null; }
+  function stopMemoryGame() { stopMemoryTimer(); STATE.memoryRound = null; }
+  function stopListenGame() { STATE.listenRound = null; }
+  function stopGravityGame() {
+    const r = STATE.gravityRound;
+    if (r && r.timer) { clearInterval(r.timer); r.timer = null; }
+    STATE.gravityRound = null;
+  }
+  function stopAllGames() {
+    stopMatchGame(); stopMemoryGame(); stopListenGame(); stopGravityGame();
+    // 停掉正在播报的 TTS / 预载音频
+    if (_currentAudio) { try { _currentAudio.pause(); } catch (e) {} _currentAudio = null; }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }
+
   function show(name, topicId) {
+    // 离开当前视图前, 停掉所有游戏运行状态, 避免后台继续计时/掉命/发音
+    stopAllGames();
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('header.top .navbtn').forEach(b => b.classList.remove('active'));
     const el = document.getElementById('view-' + name);
@@ -1799,6 +1819,7 @@
   // ============================================================
   // TTS
   // ============================================================
+  let _currentAudio = null;
   function speak(text, slow) {
     if (!text) return;
     const c = STATE.cards.find(x => x.en === text || x.ex === text);
@@ -1808,7 +1829,9 @@
       if (text === c.ex) prePath = slow ? c.audio_example_slow : c.audio_example;
     }
     if (prePath) {
+      if (_currentAudio) { try { _currentAudio.pause(); } catch (e) {} }
       const audio = new Audio(prePath);
+      _currentAudio = audio;
       audio.playbackRate = slow ? 0.85 : STATE.settings.rate || 1.0;
       audio.play().catch(() => fallbackTTS(text, slow));
       return;
@@ -1945,7 +1968,8 @@
   document.getElementById('matchRestart').addEventListener('click', startRound);
   document.getElementById('matchSpeakEn').addEventListener('click', () => {
     if (!STATE.matchRound) return;
-    STATE.matchRound.cards.forEach((c, i) => setTimeout(() => speak(c.en, false), i * 700));
+    const mr = STATE.matchRound;
+    mr.cards.forEach((c, i) => setTimeout(() => { if (STATE.matchRound === mr) speak(c.en, false); }, i * 700));
   });
 
   function startRound() {
@@ -2023,7 +2047,7 @@
       const c = r.cards.find(x => x.id === r.board[idx].key);
       if (c) {
         recordResult(c.id, true);
-        setTimeout(() => speak(c.en + '. ' + c.ex, false), 60);
+        setTimeout(() => { if (STATE.matchRound === r) speak(c.en + '. ' + c.ex, false); }, 60);
       }
       r.selected = null;
       paintMatchBoard();
@@ -2069,6 +2093,7 @@
     addXP(base);
     bumpStreak();
     setTimeout(() => {
+      if (STATE.matchRound !== r) return; // 已离开视图/换局, 不再弹窗重开
       alert(`本轮完成！\n用时 ${dt.toFixed(1)}s · 错误 ${r.errors} 次 · 得分 ${base}`);
       startRound();
     }, 200);
@@ -2133,8 +2158,8 @@
       div.innerHTML = escapeHtml(c.en);
       board.appendChild(div);
     });
-    // 自动播放一次
-    setTimeout(() => speak(current.en, false), 200);
+    // 自动播放一次 (仅在当前局仍有效时播报; 离开视图后不再发声)
+    setTimeout(() => { if (STATE.listenRound === r) speak(current.en, false); }, 200);
   }
   document.getElementById('listenBoard').addEventListener('click', (e) => {
     const opt = e.target.closest('.listen-option');
@@ -2151,6 +2176,7 @@
       recordResult(r.current.id, true);
       document.getElementById('listenReveal').textContent = `✓ ${r.current.en} = ${r.current.zh}`;
       setTimeout(() => {
+        if (STATE.listenRound !== r) return;
         r.cursor++;
         nextListen();
       }, 700);
@@ -2164,6 +2190,7 @@
       });
       document.getElementById('listenReveal').textContent = `✗ ${r.current.en} = ${r.current.zh}`;
       setTimeout(() => {
+        if (STATE.listenRound !== r) return;
         r.cursor++;
         nextListen();
       }, 1200);
@@ -2268,7 +2295,7 @@
           recordResult(b.tile.card.id, false);
         }
         paintMemoryBoard();
-        setTimeout(() => { r.flipped = []; paintMemoryBoard(); }, 700);
+        setTimeout(() => { if (STATE.memoryRound !== r) return; r.flipped = []; paintMemoryBoard(); }, 700);
         return;
       }
     }
@@ -2282,6 +2309,7 @@
     addXP(score);
     bumpStreak();
     setTimeout(() => {
+      if (STATE.memoryRound !== r) return; // 已离开视图/换局, 不再弹窗重开
       alert(`连连看完成！\n用时 ${dt.toFixed(1)}s · ${r.moves} 步 · 得分 ${score}`);
       startMemoryRound();
     }, 200);
@@ -2299,6 +2327,8 @@
   }
   document.getElementById('gravityRestart').addEventListener('click', startGravityRound);
   function startGravityRound() {
+    // 防御: 清掉上一局的计时器, 避免重进后多个 interval 叠加 (表现为单词下落越来越快)
+    if (STATE.gravityRound && STATE.gravityRound.timer) { clearInterval(STATE.gravityRound.timer); STATE.gravityRound.timer = null; }
     const all = STATE.cards.filter(c => c.topic === STATE.currentTopic);
     STATE.gravityRound = {
       queue: shuffle(all),
@@ -2351,8 +2381,8 @@
       b.dataset.id = c.id;
       optBox.appendChild(b);
     });
-    // 自动读
-    setTimeout(() => speak(r.falling.en, false), 200);
+    // 自动读 (仅在当前局仍有效时播报; 离开视图后不再发声)
+    setTimeout(() => { if (STATE.gravityRound === r) speak(r.falling.en, false); }, 200);
     if (!r.timer) {
       r.timer = setInterval(gravityTick, 30);
     }
@@ -2378,7 +2408,7 @@
     r.active = false;
     const el = document.getElementById('gravityFalling');
     el.style.opacity = '0.3';
-    setTimeout(() => { r.cursor++; nextGravity(); }, 400);
+    setTimeout(() => { if (STATE.gravityRound !== r) return; r.cursor++; nextGravity(); }, 400);
   }
   document.getElementById('gravityOptions').addEventListener('click', (e) => {
     const btn = e.target.closest('button');
@@ -2409,7 +2439,7 @@
     }
     r.active = false;
     r.cursor++;
-    setTimeout(() => nextGravity(), 500);
+    setTimeout(() => { if (STATE.gravityRound === r) nextGravity(); }, 500);
   });
 
   // ============================================================
