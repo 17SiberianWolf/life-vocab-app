@@ -6,7 +6,7 @@
  *       请用 `python -m http.server 8080` 或 run.bat --server 启动。
  * ============================================================ */
 
-const CACHE_NAME = 'wordmatch-v6';
+const CACHE_NAME = 'wordmatch-v7';
 const urlsToCache = [
   './',
   './index.html',

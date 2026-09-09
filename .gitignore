@@ -34,6 +34,9 @@ coverage/
 # Audio (生成产物,可重新生成)
 audio/
 
+# 数据合并前的自动备份 (本地保留即可, 不入 git)
+data/backup/
+
 # 纯净部署目录 (构建产物, 提交进 git 供 Cloudflare Pages 直接部署, 无需构建环境)
 # dist/ 不再排除: 已提交, 部署时 Build command 留空 + Output directory=dist
 

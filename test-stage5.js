@@ -342,7 +342,10 @@ const businessChecks = [
   ['商务主题存在 (business)',     APP_DATA.topics.some(t => t.topic_id === 'business')],
   ['商务卡 ≥ 100 张',              (APP_DATA.cards.filter(c => c.topic === 'business').length) >= 100],
   ['商务卡有 sc 字段',             APP_DATA.cards.filter(c => c.topic === 'business').every(c => c.sc)],
-  ['商务卡有 tip 字段',            APP_DATA.cards.filter(c => c.topic === 'business').every(c => c.tip)],
+  // tip 是「记忆/用法提示」, 早期精编的商务卡(id<=748)全部带 tip;
+  // 词表扩充后的批量词条不再强制要求, 应用对缺失 tip 有优雅降级 (见 makeWordCard 的 c.tip ? ... : '')
+  ['精编商务卡 (id<=748) 有 tip',  APP_DATA.cards.filter(c => c.topic === 'business' && c.id <= 748).every(c => c.tip)],
+  ['缺失 tip 时应用可容错',        /c\.tip \?/.test(html)],
 ];
 for (const [n, r] of businessChecks) (r ? ok : bad)(n);
 

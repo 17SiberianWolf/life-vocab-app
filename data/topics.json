@@ -14,7 +14,7 @@
       "stakeholders"
     ],
     "blurb": "向德国老板汇报项目用的 158 张金句：会议/进度/风险/产线/调试/付款/变更。",
-    "card_count": 158,
+    "card_count": 290,
     "subscenes": [
       {
         "id": "meeting",
@@ -90,7 +90,8 @@
       "kitchenware",
       "dining"
     ],
-    "blurb": "从下厨刀铲到餐具杯罐，会做饭就要会认得。"
+    "blurb": "从下厨刀铲到餐具杯罐，会做饭就要会认得。",
+    "card_count": 80
   },
   {
     "topic_id": "fruit",
@@ -104,7 +105,8 @@
       "grocery",
       "nutrition"
     ],
-    "blurb": "逛超市、点单、健康饮食天天碰到的水果词汇。"
+    "blurb": "逛超市、点单、健康饮食天天碰到的水果词汇。",
+    "card_count": 80
   },
   {
     "topic_id": "living",
@@ -118,7 +120,8 @@
       "furniture",
       "appliances"
     ],
-    "blurb": "从沙发到电视，从吸尘器到花盆——客厅里每一件家什的英文。"
+    "blurb": "从沙发到电视，从吸尘器到花盆——客厅里每一件家什的英文。",
+    "card_count": 80
   },
   {
     "topic_id": "vegetable",
@@ -132,7 +135,8 @@
       "grocery",
       "cooking"
     ],
-    "blurb": "买菜、做菜、点沙拉都要用到的蔬菜名。"
+    "blurb": "买菜、做菜、点沙拉都要用到的蔬菜名。",
+    "card_count": 50
   },
   {
     "topic_id": "transport",
@@ -146,7 +150,8 @@
       "commute",
       "city"
     ],
-    "blurb": "通勤、出差、问路、搭机时的高频表达。"
+    "blurb": "通勤、出差、问路、搭机时的高频表达。",
+    "card_count": 50
   },
   {
     "topic_id": "shopping",
@@ -160,7 +165,8 @@
       "money",
       "daily"
     ],
-    "blurb": "结账、退换货、比价、砍价一个都不能不会。"
+    "blurb": "结账、退换货、比价、砍价一个都不能不会。",
+    "card_count": 50
   },
   {
     "topic_id": "health",
@@ -174,7 +180,8 @@
       "clinic",
       "wellness"
     ],
-    "blurb": "看医生、买药、描述症状的实用说法。"
+    "blurb": "看医生、买药、描述症状的实用说法。",
+    "card_count": 50
   },
   {
     "topic_id": "social",
@@ -188,7 +195,8 @@
       "relationship",
       "small-talk"
     ],
-    "blurb": "寒暄、邀约、道歉、道谢——社交润滑剂。"
+    "blurb": "寒暄、邀约、道歉、道谢——社交润滑剂。",
+    "card_count": 50
   },
   {
     "topic_id": "dining",
@@ -202,7 +210,8 @@
       "food",
       "service"
     ],
-    "blurb": "进餐厅到买单全流程，含服务用语。"
+    "blurb": "进餐厅到买单全流程，含服务用语。",
+    "card_count": 50
   },
   {
     "topic_id": "home",
@@ -216,6 +225,202 @@
       "maintenance",
       "daily"
     ],
-    "blurb": "打扫、洗衣、维修、收纳，居家生活动词与名词。"
+    "blurb": "打扫、洗衣、维修、收纳，居家生活动词与名词。",
+    "card_count": 50
+  },
+  {
+    "topic_id": "office",
+    "name_zh": "职场办公",
+    "name_en": "Office & Admin",
+    "icon": "🏢",
+    "order": 11,
+    "color": "#2563eb",
+    "tags": [
+      "work",
+      "office"
+    ],
+    "blurb": "会议、邮件、日程、审批、人事——办公室里天天要用的词",
+    "card_count": 100,
+    "subscenes": []
+  },
+  {
+    "topic_id": "academic",
+    "name_zh": "学术雅思",
+    "name_en": "Academic & IELTS",
+    "icon": "🎓",
+    "order": 12,
+    "color": "#7c3aed",
+    "tags": [
+      "ielts",
+      "academic"
+    ],
+    "blurb": "雅思写作与学术阅读高频词, 也是看懂英文技术资料的底座",
+    "card_count": 315,
+    "subscenes": []
+  },
+  {
+    "topic_id": "industry",
+    "name_zh": "工业现场",
+    "name_en": "Industry & Engineering",
+    "icon": "⚙️",
+    "order": 13,
+    "color": "#ea580c",
+    "tags": [
+      "engineering",
+      "work"
+    ],
+    "blurb": "产线、设备、工艺、质量、安全——工厂与工程项目现场用语",
+    "card_count": 141,
+    "subscenes": []
+  },
+  {
+    "topic_id": "tech",
+    "name_zh": "科技数码",
+    "name_en": "Tech & Digital",
+    "icon": "💻",
+    "order": 14,
+    "color": "#0ea5e9",
+    "tags": [
+      "tech",
+      "it"
+    ],
+    "blurb": "电脑、网络、软件、数据与人工智能",
+    "card_count": 154,
+    "subscenes": []
+  },
+  {
+    "topic_id": "function",
+    "name_zh": "功能表达",
+    "name_en": "Functional Language",
+    "icon": "💬",
+    "order": 15,
+    "color": "#16a34a",
+    "tags": [
+      "speaking",
+      "phrase"
+    ],
+    "blurb": "开口就用的句式: 请求、建议、同意反对、礼貌表达、衔接词",
+    "card_count": 155,
+    "subscenes": []
+  },
+  {
+    "topic_id": "phrasal",
+    "name_zh": "短语习语",
+    "name_en": "Phrasal Verbs & Idioms",
+    "icon": "🔗",
+    "order": 16,
+    "color": "#db2777",
+    "tags": [
+      "phrase",
+      "idiom"
+    ],
+    "blurb": "母语者天天在用的动词短语与习惯表达",
+    "card_count": 149,
+    "subscenes": []
+  },
+  {
+    "topic_id": "emotion",
+    "name_zh": "情绪性格",
+    "name_en": "Emotions & Personality",
+    "icon": "😊",
+    "order": 17,
+    "color": "#f59e0b",
+    "tags": [
+      "emotion",
+      "personality"
+    ],
+    "blurb": "描述感受、情绪与性格的词, 让表达不再只会 very good",
+    "card_count": 166,
+    "subscenes": []
+  },
+  {
+    "topic_id": "money",
+    "name_zh": "金钱金融",
+    "name_en": "Money & Finance",
+    "icon": "💰",
+    "order": 18,
+    "color": "#65a30d",
+    "tags": [
+      "finance",
+      "money"
+    ],
+    "blurb": "银行、支付、投资、税务与日常消费",
+    "card_count": 158,
+    "subscenes": []
+  },
+  {
+    "topic_id": "study",
+    "name_zh": "学习教育",
+    "name_en": "Study & Education",
+    "icon": "📚",
+    "order": 19,
+    "color": "#0891b2",
+    "tags": [
+      "study",
+      "education"
+    ],
+    "blurb": "课程、考试、学校生活与自学方法",
+    "card_count": 147,
+    "subscenes": []
+  },
+  {
+    "topic_id": "society",
+    "name_zh": "社会传媒",
+    "name_en": "Society & Media",
+    "icon": "📰",
+    "order": 20,
+    "color": "#dc2626",
+    "tags": [
+      "society",
+      "media"
+    ],
+    "blurb": "新闻、法律、政府、环境议题——雅思写作常考领域",
+    "card_count": 151,
+    "subscenes": []
+  },
+  {
+    "topic_id": "nature",
+    "name_zh": "天气环境",
+    "name_en": "Weather & Environment",
+    "icon": "🌦️",
+    "order": 21,
+    "color": "#38bdf8",
+    "tags": [
+      "nature",
+      "weather"
+    ],
+    "blurb": "天气、季节、地理与环保",
+    "card_count": 152,
+    "subscenes": []
+  },
+  {
+    "topic_id": "sports",
+    "name_zh": "运动健康",
+    "name_en": "Sports & Fitness",
+    "icon": "🏃",
+    "order": 22,
+    "color": "#059669",
+    "tags": [
+      "sports",
+      "health"
+    ],
+    "blurb": "运动项目、健身、身体状况与生活习惯",
+    "card_count": 195,
+    "subscenes": []
+  },
+  {
+    "topic_id": "travel",
+    "name_zh": "旅行出行",
+    "name_en": "Travel & Trips",
+    "icon": "✈️",
+    "order": 23,
+    "color": "#8b5cf6",
+    "tags": [
+      "travel",
+      "life"
+    ],
+    "blurb": "机票酒店、海关、问路、景点与旅行突发状况",
+    "card_count": 179,
+    "subscenes": []
   }
 ]
