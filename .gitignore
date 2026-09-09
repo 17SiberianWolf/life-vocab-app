@@ -34,8 +34,8 @@ coverage/
 # Audio (生成产物,可重新生成)
 audio/
 
-# 纯净部署目录 (构建产物, 供 Cloudflare Pages 部署, 不入 git)
-dist/
+# 纯净部署目录 (构建产物, 提交进 git 供 Cloudflare Pages 直接部署, 无需构建环境)
+# dist/ 不再排除: 已提交, 部署时 Build command 留空 + Output directory=dist
 
 # Supabase local config (如果有)
 supabase/.temp/
