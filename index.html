@@ -1795,10 +1795,13 @@
     return div;
   }
 
-  document.getElementById('cardList').addEventListener('click', (e) => {
+  // 词卡按钮事件委托: 绑定在 document 级, 覆盖所有出现词卡的视图
+  // (原 bug: 只绑在浏览页 #cardList 上, 错题本/SRS 复习页的词卡按钮全部无效)
+  document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const cardEl = btn.closest('[data-card-id]');
+    if (!cardEl) return;
     const id = parseInt(cardEl.dataset.cardId, 10);
     const c = STATE.cards.find(x => x.id === id);
     if (!c) return;
