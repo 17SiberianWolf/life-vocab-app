@@ -422,7 +422,7 @@
   <section id="view-topics" class="view active">
     <h2 style="margin-top:8px; margin-bottom:6px; font-size:22px;">选择一个主题</h2>
     <p style="color: var(--text-soft); margin-top:0; margin-bottom:18px; font-size:14px;">
-      点击主题进入 5 种游戏。所有 10 个主题、共 590 张卡。
+      <span id="topicsSummary">点击主题进入 6 种玩法。</span>
     </p>
     <div class="topic-grid" id="topicGrid"></div>
   </section>
@@ -1661,6 +1661,8 @@
   function renderTopics() {
     const grid = document.getElementById('topicGrid');
     grid.innerHTML = '';
+    const sumEl = document.getElementById('topicsSummary');
+    if (sumEl) sumEl.textContent = '共 ' + STATE.topics.length + ' 个主题、' + STATE.cards.length + ' 张卡，点击主题进入 6 种玩法。';
     STATE.topics
       .slice()
       .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -1874,6 +1876,7 @@
   function recordResult(cardId, correct, explicitStatus) {
     const t = today();
     const prev = STATE.progress.card_state[cardId] || {};
+    const isNewCard = !STATE.progress.card_state[cardId];
     const wasShadow = prev.was_shadow === true || prev.status === 'shadow';
     let next;
 
@@ -1929,16 +1932,24 @@
       next.was_shadow = true;
       next.reps = 0;
     }
+    if (isNewCard) {
+      // 首次学习这张卡: 消耗一个今日新词额度
+      ensureNewQuota();
+      STATE.progress.new_count = (STATE.progress.new_count || 0) + 1;
+    }
     STATE.progress.card_state[cardId] = next;
     saveProgress();
+    updateNavBadges();
     addXP(correct ? (next.status === 'known' && wasShadow ? 6 : (next.status === 'known' ? 5 : 3)) : 2);
   }
 
   function getDueCards() {
+    // 真正的「今日复习」: 错题 + 已学但 SRS 到期的卡。
+    // 新卡不算——新词走每日额度逐步引入 (见 getRemainingNewQuota)。
     const t = today();
     return STATE.cards.filter(c => {
       const s = STATE.progress.card_state[c.id];
-      if (!s) return true; // 新卡
+      if (!s) return false;
       if (s.was_shadow) return true; // 错题必复习
       if (s.status === 'known' && (!s.next_due || s.next_due <= t)) return true;
       return false;
@@ -1957,6 +1968,23 @@
   }
   function getErrorCount() { return getErrorCards().length; }
   function getDueCount() { return getDueCards().length; }
+
+  // ---- 每日新词额度 ----
+  // 目的: 3032 张卡不可能一天学完。每天最多引入 N 张新卡 (默认 10),
+  // 用进度里的 new_date/new_count 记录当天已学数量, 跨天自动重置。
+  const DAILY_NEW_DEFAULT = 10;
+  function dailyNewGoal() {
+    return (STATE.settings && STATE.settings.daily_new) || DAILY_NEW_DEFAULT;
+  }
+  function ensureNewQuota() {
+    const t = today();
+    const p = STATE.progress;
+    if (p.new_date !== t) { p.new_date = t; p.new_count = 0; }
+  }
+  function getRemainingNewQuota() {
+    ensureNewQuota();
+    return Math.max(0, dailyNewGoal() - (STATE.progress.new_count || 0));
+  }
 
   // ============================================================
   // Quizlet Match
@@ -2450,13 +2478,14 @@
   // ============================================================
   function renderSRS() {
     const due = getDueCards();
-    const news = getNewCards(20);
+    const quota = getRemainingNewQuota();
+    const news = quota > 0 ? getNewCards(quota) : [];
     document.getElementById('srsDueCount').textContent = `(${due.length})`;
     document.getElementById('srsNewCount').textContent = `(${news.length})`;
 
     document.getElementById('srsSummaryRow').innerHTML = `
       <span style="font-size:13px;">🔥 待复习 <b>${due.length}</b></span>
-      <span style="font-size:13px;">🆕 待新学 <b>${news.length}</b></span>
+      <span style="font-size:13px;">🆕 今日新词 <b>${news.length}</b><span style="color:var(--text-muted);">/额度 ${quota > 0 ? dailyNewGoal() : 0}</span></span>
       <span style="font-size:13px;">📈 XP <b>${STATE.progress.xp}</b></span>
       <span style="font-size:13px;">⚡ 连续 <b>${STATE.progress.streak || 0}</b> 天</span>
     `;
@@ -2464,7 +2493,9 @@
     const dueList = document.getElementById('srsDueList');
     dueList.innerHTML = '';
     if (due.length === 0) {
-      dueList.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); text-align:center; padding:20px;">🎉 今日无复习任务,去学点新词吧。</div>';
+      dueList.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); text-align:center; padding:20px;">'
+        + (quota <= 0 ? '🎉 今日任务全部完成，明天见！' : '🎉 今日无复习任务，去学点新词吧。')
+        + '</div>';
     } else {
       due.forEach(c => dueList.appendChild(makeWordCard(c)));
     }
@@ -2472,7 +2503,11 @@
     const newList = document.getElementById('srsNewList');
     newList.innerHTML = '';
     if (news.length === 0) {
-      newList.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); text-align:center; padding:20px;">所有词都已经过了一遍。继续掌握已有词汇吧。</div>';
+      newList.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); text-align:center; padding:20px;">'
+        + (quota <= 0
+            ? '✅ 今日新词额度已用完（' + dailyNewGoal() + ' 张）。复习旧词巩固一下，明天再来学新词吧。'
+            : '所有词都已经过了一遍。继续掌握已有词汇吧。')
+        + '</div>';
     } else {
       news.forEach(c => newList.appendChild(makeWordCard(c)));
     }
@@ -2585,7 +2620,11 @@
     const errBadge = document.getElementById('errBadge');
     const due = getDueCount();
     const err = getErrorCount();
-    if (due > 0) { srsBadge.textContent = due; srsBadge.style.display = 'inline-block'; }
+    if (due > 0) {
+      srsBadge.textContent = due > 99 ? '99+' : due;
+      srsBadge.title = '今日待复习 ' + due + ' 张（SRS 到期 + 错题，不含新词）';
+      srsBadge.style.display = 'inline-block';
+    }
     else { srsBadge.style.display = 'none'; }
     if (err > 0) { errBadge.textContent = err; errBadge.style.display = 'inline-block'; }
     else { errBadge.style.display = 'none'; }
@@ -2991,7 +3030,7 @@
       { label: '总词卡', value: total, sub: STATE.topics.length + ' 个主题' },
       { label: '已掌握', value: known, sub: Math.round(known / total * 100) + '%', accent: 'var(--good)' },
       { label: '待巩固', value: shadow, sub: '模糊 / 错题' },
-      { label: '今日复习', value: due, sub: 'SRS 待复习' },
+      { label: '今日复习', value: due, sub: 'SRS 到期 + 错题' },
       { label: '错题本', value: err, sub: '连对 2 次移出' },
       { label: '连续天数', value: STATE.progress.streak || 0, sub: '天' },
       { label: '累计 XP', value: STATE.progress.xp || 0, sub: '积分' },
