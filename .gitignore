@@ -34,6 +34,9 @@ coverage/
 # Audio (生成产物,可重新生成)
 audio/
 
+# 纯净部署目录 (构建产物, 供 Cloudflare Pages 部署, 不入 git)
+dist/
+
 # Supabase local config (如果有)
 supabase/.temp/
 

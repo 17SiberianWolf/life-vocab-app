@@ -20,6 +20,7 @@ life-vocab-app 构建脚本 (阶段 2)
 import argparse
 import json
 import os
+import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -2505,6 +2506,23 @@ def build(data_dir: str, out_path: str, config_path: str = None) -> None:
         print("[OK] 云同步已启用 (Supabase)")
     else:
         print("[info] 云同步未配置 (本地模式:数据存 IndexedDB)")
+
+    # 生成纯净部署目录 dist/(仅核心静态文件, 供 Cloudflare Pages 部署)
+    dist_dir = os.path.join(HERE, "dist")
+    shutil.rmtree(dist_dir, ignore_errors=True)
+    os.makedirs(os.path.join(dist_dir, "icons"), exist_ok=True)
+    shutil.copy2(out_path, os.path.join(dist_dir, "index.html"))
+    for _name in ("manifest.webmanifest", "sw.js"):
+        _src = os.path.join(HERE, _name)
+        if os.path.exists(_src):
+            shutil.copy2(_src, os.path.join(dist_dir, _name))
+    _icons_src = os.path.join(HERE, "icons")
+    if os.path.isdir(_icons_src):
+        for _f in os.listdir(_icons_src):
+            _fp = os.path.join(_icons_src, _f)
+            if os.path.isfile(_fp):
+                shutil.copy2(_fp, os.path.join(dist_dir, "icons", _f))
+    print(f"[OK] 部署目录 dist/ 已就绪 (index.html + manifest + sw.js + icons)")
 
 
 def main():
