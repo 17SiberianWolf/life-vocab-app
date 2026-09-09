@@ -14,7 +14,7 @@
       "stakeholders"
     ],
     "blurb": "向德国老板汇报项目用的 158 张金句：会议/进度/风险/产线/调试/付款/变更。",
-    "card_count": 290,
+    "card_count": 280,
     "subscenes": [
       {
         "id": "meeting",
@@ -422,5 +422,67 @@
     "blurb": "机票酒店、海关、问路、景点与旅行突发状况",
     "card_count": 179,
     "subscenes": []
+  },
+  {
+    "topic_id": "chinese_food",
+    "name_zh": "中国菜品",
+    "name_en": "Chinese Dishes & Ordering",
+    "icon": "🥢",
+    "order": 1,
+    "color": "#dc2626",
+    "tags": [
+      "chinese-food",
+      "dining",
+      "culture"
+    ],
+    "blurb": "100 道中国各地代表菜（华北/东北/华东/华中/华南/西南/西北/港澳台）+ 70+ 条中餐馆点餐实用句。",
+    "card_count": 198,
+    "subscenes": [
+      {
+        "id": "huabei",
+        "name_zh": "🌾 华北",
+        "module": "huabei"
+      },
+      {
+        "id": "dongbei",
+        "name_zh": "❄ 东北",
+        "module": "dongbei"
+      },
+      {
+        "id": "huadong",
+        "name_zh": "🌸 华东",
+        "module": "huadong"
+      },
+      {
+        "id": "huazhong",
+        "name_zh": "🌶 华中",
+        "module": "huazhong"
+      },
+      {
+        "id": "huanan",
+        "name_zh": "🥥 华南",
+        "module": "huanan"
+      },
+      {
+        "id": "xinan",
+        "name_zh": "🌶 西南",
+        "module": "xinan"
+      },
+      {
+        "id": "xibei",
+        "name_zh": "🐑 西北",
+        "module": "xibei"
+      },
+      {
+        "id": "gangaotai",
+        "name_zh": "🏝 港澳台",
+        "module": "gangaotai"
+      },
+      {
+        "id": "order",
+        "name_zh": "🍽 点餐用语",
+        "module": "order"
+      }
+    ]
   }
 ]

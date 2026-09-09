@@ -3,10 +3,13 @@
     "topic_id": "office",
     "name_zh": "职场办公",
     "name_en": "Office & Admin",
-    "icon": "\ud83c\udfe2",
+    "icon": "🏢",
     "order": 11,
     "color": "#2563eb",
-    "tags": ["work", "office"],
+    "tags": [
+      "work",
+      "office"
+    ],
     "blurb": "会议、邮件、日程、审批、人事——办公室里天天要用的词",
     "card_count": 0,
     "subscenes": []
@@ -15,10 +18,13 @@
     "topic_id": "academic",
     "name_zh": "学术雅思",
     "name_en": "Academic & IELTS",
-    "icon": "\ud83c\udf93",
+    "icon": "🎓",
     "order": 12,
     "color": "#7c3aed",
-    "tags": ["ielts", "academic"],
+    "tags": [
+      "ielts",
+      "academic"
+    ],
     "blurb": "雅思写作与学术阅读高频词, 也是看懂英文技术资料的底座",
     "card_count": 0,
     "subscenes": []
@@ -27,10 +33,13 @@
     "topic_id": "industry",
     "name_zh": "工业现场",
     "name_en": "Industry & Engineering",
-    "icon": "\u2699\ufe0f",
+    "icon": "⚙️",
     "order": 13,
     "color": "#ea580c",
-    "tags": ["engineering", "work"],
+    "tags": [
+      "engineering",
+      "work"
+    ],
     "blurb": "产线、设备、工艺、质量、安全——工厂与工程项目现场用语",
     "card_count": 0,
     "subscenes": []
@@ -39,10 +48,13 @@
     "topic_id": "tech",
     "name_zh": "科技数码",
     "name_en": "Tech & Digital",
-    "icon": "\ud83d\udcbb",
+    "icon": "💻",
     "order": 14,
     "color": "#0ea5e9",
-    "tags": ["tech", "it"],
+    "tags": [
+      "tech",
+      "it"
+    ],
     "blurb": "电脑、网络、软件、数据与人工智能",
     "card_count": 0,
     "subscenes": []
@@ -51,10 +63,13 @@
     "topic_id": "function",
     "name_zh": "功能表达",
     "name_en": "Functional Language",
-    "icon": "\ud83d\udcac",
+    "icon": "💬",
     "order": 15,
     "color": "#16a34a",
-    "tags": ["speaking", "phrase"],
+    "tags": [
+      "speaking",
+      "phrase"
+    ],
     "blurb": "开口就用的句式: 请求、建议、同意反对、礼貌表达、衔接词",
     "card_count": 0,
     "subscenes": []
@@ -63,10 +78,13 @@
     "topic_id": "phrasal",
     "name_zh": "短语习语",
     "name_en": "Phrasal Verbs & Idioms",
-    "icon": "\ud83d\udd17",
+    "icon": "🔗",
     "order": 16,
     "color": "#db2777",
-    "tags": ["phrase", "idiom"],
+    "tags": [
+      "phrase",
+      "idiom"
+    ],
     "blurb": "母语者天天在用的动词短语与习惯表达",
     "card_count": 0,
     "subscenes": []
@@ -75,10 +93,13 @@
     "topic_id": "emotion",
     "name_zh": "情绪性格",
     "name_en": "Emotions & Personality",
-    "icon": "\ud83d\ude0a",
+    "icon": "😊",
     "order": 17,
     "color": "#f59e0b",
-    "tags": ["emotion", "personality"],
+    "tags": [
+      "emotion",
+      "personality"
+    ],
     "blurb": "描述感受、情绪与性格的词, 让表达不再只会 very good",
     "card_count": 0,
     "subscenes": []
@@ -87,10 +108,13 @@
     "topic_id": "money",
     "name_zh": "金钱金融",
     "name_en": "Money & Finance",
-    "icon": "\ud83d\udcb0",
+    "icon": "💰",
     "order": 18,
     "color": "#65a30d",
-    "tags": ["finance", "money"],
+    "tags": [
+      "finance",
+      "money"
+    ],
     "blurb": "银行、支付、投资、税务与日常消费",
     "card_count": 0,
     "subscenes": []
@@ -99,10 +123,13 @@
     "topic_id": "study",
     "name_zh": "学习教育",
     "name_en": "Study & Education",
-    "icon": "\ud83d\udcda",
+    "icon": "📚",
     "order": 19,
     "color": "#0891b2",
-    "tags": ["study", "education"],
+    "tags": [
+      "study",
+      "education"
+    ],
     "blurb": "课程、考试、学校生活与自学方法",
     "card_count": 0,
     "subscenes": []
@@ -111,10 +138,13 @@
     "topic_id": "society",
     "name_zh": "社会传媒",
     "name_en": "Society & Media",
-    "icon": "\ud83d\udcf0",
+    "icon": "📰",
     "order": 20,
     "color": "#dc2626",
-    "tags": ["society", "media"],
+    "tags": [
+      "society",
+      "media"
+    ],
     "blurb": "新闻、法律、政府、环境议题——雅思写作常考领域",
     "card_count": 0,
     "subscenes": []
@@ -123,10 +153,13 @@
     "topic_id": "nature",
     "name_zh": "天气环境",
     "name_en": "Weather & Environment",
-    "icon": "\ud83c\udf26\ufe0f",
+    "icon": "🌦️",
     "order": 21,
     "color": "#38bdf8",
-    "tags": ["nature", "weather"],
+    "tags": [
+      "nature",
+      "weather"
+    ],
     "blurb": "天气、季节、地理与环保",
     "card_count": 0,
     "subscenes": []
@@ -135,10 +168,13 @@
     "topic_id": "sports",
     "name_zh": "运动健康",
     "name_en": "Sports & Fitness",
-    "icon": "\ud83c\udfc3",
+    "icon": "🏃",
     "order": 22,
     "color": "#059669",
-    "tags": ["sports", "health"],
+    "tags": [
+      "sports",
+      "health"
+    ],
     "blurb": "运动项目、健身、身体状况与生活习惯",
     "card_count": 0,
     "subscenes": []
@@ -147,12 +183,77 @@
     "topic_id": "travel",
     "name_zh": "旅行出行",
     "name_en": "Travel & Trips",
-    "icon": "\u2708\ufe0f",
+    "icon": "✈️",
     "order": 23,
     "color": "#8b5cf6",
-    "tags": ["travel", "life"],
+    "tags": [
+      "travel",
+      "life"
+    ],
     "blurb": "机票酒店、海关、问路、景点与旅行突发状况",
     "card_count": 0,
     "subscenes": []
+  },
+  {
+    "topic_id": "chinese_food",
+    "name_zh": "中国菜品",
+    "name_en": "Chinese Dishes & Ordering",
+    "icon": "🥢",
+    "order": 1,
+    "color": "#dc2626",
+    "tags": [
+      "chinese-food",
+      "dining",
+      "culture"
+    ],
+    "blurb": "100 道中国各地代表菜（华北/东北/华东/华中/华南/西南/西北/港澳台）+ 70+ 条中餐馆点餐实用句。",
+    "card_count": 0,
+    "subscenes": [
+      {
+        "id": "huabei",
+        "name_zh": "🌾 华北",
+        "module": "huabei"
+      },
+      {
+        "id": "dongbei",
+        "name_zh": "❄ 东北",
+        "module": "dongbei"
+      },
+      {
+        "id": "huadong",
+        "name_zh": "🌸 华东",
+        "module": "huadong"
+      },
+      {
+        "id": "huazhong",
+        "name_zh": "🌶 华中",
+        "module": "huazhong"
+      },
+      {
+        "id": "huanan",
+        "name_zh": "🥥 华南",
+        "module": "huanan"
+      },
+      {
+        "id": "xinan",
+        "name_zh": "🌶 西南",
+        "module": "xinan"
+      },
+      {
+        "id": "xibei",
+        "name_zh": "🐑 西北",
+        "module": "xibei"
+      },
+      {
+        "id": "gangaotai",
+        "name_zh": "🏝 港澳台",
+        "module": "gangaotai"
+      },
+      {
+        "id": "order",
+        "name_zh": "🍽 点餐用语",
+        "module": "order"
+      }
+    ]
   }
 ]

@@ -1,0 +1,871 @@
+{
+ "dishes": [
+  {
+   "A": "华北",
+   "B": "北京烤鸭",
+   "C": "Peking duck / Beijing roast duck",
+   "D": "No trip to Beijing is complete without trying authentic Peking duck."
+  },
+  {
+   "A": "华北",
+   "B": "炸酱面",
+   "C": "Zhajiangmian (noodles with soybean paste)",
+   "D": "He ordered a bowl of Zhajiangmian, topped with cucumbers and bean sprouts."
+  },
+  {
+   "A": "华北",
+   "B": "驴打滚",
+   "C": "glutinous rice rolls with sweet bean flour",
+   "D": "Lüdagun is a traditional Beijing snack made of sticky rice rolled in soybean flour."
+  },
+  {
+   "A": "华北",
+   "B": "天津煎饼果子",
+   "C": "Tianjin-style jianbing (crepe)",
+   "D": "Vendors sell jianbing on street corners all over Tianjin every morning."
+  },
+  {
+   "A": "华北",
+   "B": "狗不理包子",
+   "C": "Goubuli steamed buns",
+   "D": "The Goubuli buns are famous for their thin skin and juicy filling."
+  },
+  {
+   "A": "华北",
+   "B": "锅塌豆腐",
+   "C": "braised tofu coated with egg",
+   "D": "Guota tofu is a classic Tianjin dish where tofu is pan-fried with egg."
+  },
+  {
+   "A": "华北",
+   "B": "德州扒鸡",
+   "C": "Dezhou braised chicken",
+   "D": "Dezhou braised chicken is so tender that the meat falls off the bone."
+  },
+  {
+   "A": "华北",
+   "B": "葱烧海参",
+   "C": "braised sea cucumber with scallions",
+   "D": "Braised sea cucumber with scallions is a signature Shandong delicacy."
+  },
+  {
+   "A": "华北",
+   "B": "糖醋鲤鱼",
+   "C": "sweet and sour carp",
+   "D": "The sweet and sour carp is deep-fried until crispy before the sauce is poured over."
+  },
+  {
+   "A": "华北",
+   "B": "九转大肠",
+   "C": "braised pork intestines in sweet-sour sauce",
+   "D": "Jiuzhuan intestines are simmered repeatedly to absorb the rich sauce."
+  },
+  {
+   "A": "东北",
+   "B": "锅包肉",
+   "C": "Guo Bao Rou (sweet and sour pork)",
+   "D": "Guo Bao Rou is crispy fried pork slices in a tangy sweet-sour glaze."
+  },
+  {
+   "A": "东北",
+   "B": "地三鲜",
+   "C": "stir-fried potato, eggplant and green pepper",
+   "D": "Disanxian is a humble yet beloved vegetarian dish from Northeast China."
+  },
+  {
+   "A": "东北",
+   "B": "小鸡炖蘑菇",
+   "C": "braised chicken with mushrooms",
+   "D": "Chicken stewed with wild mushrooms is a must-have at Northeastern family dinners."
+  },
+  {
+   "A": "东北",
+   "B": "酸菜白肉",
+   "C": "pork belly with pickled cabbage",
+   "D": "Pork belly with sour cabbage warms you up on a cold winter day."
+  },
+  {
+   "A": "东北",
+   "B": "猪肉炖粉条",
+   "C": "pork stewed with glass noodles",
+   "D": "The glass noodles soak up all the flavor of the pork stew."
+  },
+  {
+   "A": "东北",
+   "B": "哈尔滨红肠",
+   "C": "Harbin red sausage",
+   "D": "Harbin red sausage has a distinct smoky flavor from its Russian heritage."
+  },
+  {
+   "A": "东北",
+   "B": "锅贴",
+   "C": "potstickers / pan-fried dumplings",
+   "D": "We ordered a plate of crispy-bottomed potstickers for lunch."
+  },
+  {
+   "A": "东北",
+   "B": "得莫利炖鱼",
+   "C": "Demoli stewed fish",
+   "D": "Demoli stewed fish combines carp, tofu and vermicelli in one hearty pot."
+  },
+  {
+   "A": "东北",
+   "B": "烤冷面",
+   "C": "grilled cold noodles",
+   "D": "Street vendors in Harbin grill the cold noodles with egg and sausage."
+  },
+  {
+   "A": "东北",
+   "B": "延吉冷面",
+   "C": "Yanji cold noodles (naengmyeon)",
+   "D": "Yanji cold noodles are served in icy broth with beef and kimchi."
+  },
+  {
+   "A": "华东",
+   "B": "小笼包",
+   "C": "xiaolongbao (soup dumplings)",
+   "D": "Be careful—the soup inside xiaolongbao is piping hot."
+  },
+  {
+   "A": "华东",
+   "B": "生煎包",
+   "C": "shengjianbao (pan-fried pork buns)",
+   "D": "Shengjianbao are crispy on the bottom and bursting with juice inside."
+  },
+  {
+   "A": "华东",
+   "B": "红烧肉",
+   "C": "braised pork belly in soy sauce",
+   "D": "Hongshao rou melts in your mouth after hours of slow braising."
+  },
+  {
+   "A": "华东",
+   "B": "松鼠桂鱼",
+   "C": "squirrel fish (sweet-sour mandarin fish)",
+   "D": "Squirrel fish is scored and fried to resemble a fluffy squirrel's tail."
+  },
+  {
+   "A": "华东",
+   "B": "蟹粉豆腐",
+   "C": "tofu with crab roe",
+   "D": "Tofu with crab roe is a luxurious autumn specialty in Jiangsu."
+  },
+  {
+   "A": "华东",
+   "B": "盐水鸭",
+   "C": "Nanjing salted duck",
+   "D": "Nanjing salted duck is prized for its tender meat and subtle brine flavor."
+  },
+  {
+   "A": "华东",
+   "B": "鸭血粉丝汤",
+   "C": "duck blood and vermicelli soup",
+   "D": "A bowl of duck blood soup is a classic Nanjing breakfast."
+  },
+  {
+   "A": "华东",
+   "B": "西湖醋鱼",
+   "C": "West Lake vinegar fish",
+   "D": "West Lake vinegar fish features a sweet-and-sour glaze over tender grass carp."
+  },
+  {
+   "A": "华东",
+   "B": "东坡肉",
+   "C": "Dongpo pork",
+   "D": "Dongpo pork is named after the Song dynasty poet Su Dongpo."
+  },
+  {
+   "A": "华东",
+   "B": "龙井虾仁",
+   "C": "stir-fried shrimp with Longjing tea",
+   "D": "The shrimp is stir-fried with tender Longjing tea leaves for a fragrant aroma."
+  },
+  {
+   "A": "华东",
+   "B": "宁波汤圆",
+   "C": "Ningbo tangyuan (glutinous rice balls)",
+   "D": "We ate sweet sesame tangyuan on the Lantern Festival."
+  },
+  {
+   "A": "华东",
+   "B": "佛跳墙",
+   "C": "Buddha Jumps Over the Wall",
+   "D": "Buddha Jumps Over the Wall is a Fujian banquet soup with dozens of premium ingredients."
+  },
+  {
+   "A": "华东",
+   "B": "沙茶面",
+   "C": "shacha noodles",
+   "D": "Xiamen's shacha noodles come with a rich, nutty seafood sauce."
+  },
+  {
+   "A": "华东",
+   "B": "土笋冻",
+   "C": "sea worm jelly",
+   "D": "Tusun jelly is a famous Xiamen snack made from a marine worm."
+  },
+  {
+   "A": "华东",
+   "B": "臭鳜鱼",
+   "C": "stinky mandarin fish",
+   "D": "Despite its smell, stinky mandarin fish tastes surprisingly delicious."
+  },
+  {
+   "A": "华东",
+   "B": "毛豆腐",
+   "C": "hairy tofu",
+   "D": "Hairy tofu from Huizhou is fermented until covered in white fuzz."
+  },
+  {
+   "A": "华东",
+   "B": "绍兴醉鸡",
+   "C": "Shaoxing wine-marinated chicken",
+   "D": "The chicken is poached and soaked in Shaoxing rice wine."
+  },
+  {
+   "A": "华东",
+   "B": "片儿川",
+   "C": "pian er chuan (Hangzhou noodle soup)",
+   "D": "Locals in Hangzhou start their day with a bowl of pian er chuan."
+  },
+  {
+   "A": "华中",
+   "B": "剁椒鱼头",
+   "C": "steamed fish head with chopped chili",
+   "D": "Steamed fish head piled with red chopped chili is a Hunan classic."
+  },
+  {
+   "A": "华中",
+   "B": "毛氏红烧肉",
+   "C": "Mao-style braised pork",
+   "D": "Mao-style braised pork uses less soy sauce for a lighter color."
+  },
+  {
+   "A": "华中",
+   "B": "辣椒炒肉",
+   "C": "stir-fried pork with chili peppers",
+   "D": "Stir-fried pork with chili is the most common home-style dish in Hunan."
+  },
+  {
+   "A": "华中",
+   "B": "麻辣小龙虾",
+   "C": "spicy crayfish",
+   "D": "In summer, the streets of Changsha fill with stalls selling spicy crayfish."
+  },
+  {
+   "A": "华中",
+   "B": "热干面",
+   "C": "reganmian (hot dry noodles)",
+   "D": "Wuhan locals eat reganmian for breakfast almost every day."
+  },
+  {
+   "A": "华中",
+   "B": "武昌鱼",
+   "C": "steamed Wuchang fish",
+   "D": "Steamed Wuchang fish was praised in a famous poem by Chairman Mao."
+  },
+  {
+   "A": "华中",
+   "B": "糊辣汤",
+   "C": "hulatang (spicy pepper soup)",
+   "D": "A bowl of hulatang with fried dough sticks is a Henan breakfast staple."
+  },
+  {
+   "A": "华中",
+   "B": "瓦罐汤",
+   "C": "clay pot soup",
+   "D": "Nanchang's clay pot soup simmers for hours over slow heat."
+  },
+  {
+   "A": "华中",
+   "B": "藜蒿炒腊肉",
+   "C": "stir-fried preserved pork with artemisia",
+   "D": "This Jiangxi specialty pairs smoked pork with fragrant wild artemisia."
+  },
+  {
+   "A": "华中",
+   "B": "剁椒蒸芋头",
+   "C": "steamed taro with chopped chili",
+   "D": "Steamed taro with chopped chili is a comforting Hunan side dish."
+  },
+  {
+   "A": "华南",
+   "B": "白切鸡",
+   "C": "poached chicken (white cut chicken)",
+   "D": "White cut chicken is judged by its silky skin and just-set flesh."
+  },
+  {
+   "A": "华南",
+   "B": "烧鹅",
+   "C": "roast goose",
+   "D": "Cantonese roast goose has crackling skin and a deep five-spice flavor."
+  },
+  {
+   "A": "华南",
+   "B": "叉烧",
+   "C": "char siu (barbecued pork)",
+   "D": "Char siu pork glistens with a honey-maltose glaze."
+  },
+  {
+   "A": "华南",
+   "B": "虾饺",
+   "C": "har gow (shrimp dumplings)",
+   "D": "A perfect har gow has at least seven translucent pleats."
+  },
+  {
+   "A": "华南",
+   "B": "豉汁蒸排骨",
+   "C": "steamed pork ribs with black bean sauce",
+   "D": "The ribs are steamed until tender in fermented black bean sauce."
+  },
+  {
+   "A": "华南",
+   "B": "肠粉",
+   "C": "cheung fun (rice noodle rolls)",
+   "D": "We ordered cheung fun with shrimp and sweet soy sauce."
+  },
+  {
+   "A": "华南",
+   "B": "老火靓汤",
+   "C": "Cantonese slow-simmered soup",
+   "D": "Cantonese families simmer soup for hours to extract every bit of flavor."
+  },
+  {
+   "A": "华南",
+   "B": "潮汕牛肉火锅",
+   "C": "Chaoshan beef hotpot",
+   "D": "Chaoshan beef hotpot serves different cuts of beef cooked seconds in clear broth."
+  },
+  {
+   "A": "华南",
+   "B": "蚝烙",
+   "C": "oyster omelette",
+   "D": "Chaozhou's oyster omelette is crispy at the edges and gooey inside."
+  },
+  {
+   "A": "华南",
+   "B": "白灼虾",
+   "C": "blanched prawns",
+   "D": "Blanched prawns are dipped in soy sauce to highlight their natural sweetness."
+  },
+  {
+   "A": "华南",
+   "B": "早茶点心",
+   "C": "dim sum",
+   "D": "Going for dim sum on Sunday morning is a Cantonese family tradition."
+  },
+  {
+   "A": "华南",
+   "B": "螺蛳粉",
+   "C": "Luosifen (river snail rice noodles)",
+   "D": "Luosifen from Liuzhou is famous—and infamous—for its pungent pickled bamboo shoots."
+  },
+  {
+   "A": "华南",
+   "B": "桂林米粉",
+   "C": "Guilin rice noodles",
+   "D": "A bowl of Guilin rice noodles comes topped with crispy pork and peanuts."
+  },
+  {
+   "A": "华南",
+   "B": "文昌鸡",
+   "C": "Wenchang chicken",
+   "D": "Wenchang chicken is Hainan's signature dish, served with ginger-scallion dip."
+  },
+  {
+   "A": "华南",
+   "B": "椰子鸡",
+   "C": "coconut chicken hotpot",
+   "D": "Coconut chicken hotpot cooks chicken in fresh coconut water for a sweet broth."
+  },
+  {
+   "A": "西南",
+   "B": "麻婆豆腐",
+   "C": "Mapo tofu",
+   "D": "Mapo tofu combines soft tofu with minced beef in a numbing-spicy sauce."
+  },
+  {
+   "A": "西南",
+   "B": "回锅肉",
+   "C": "twice-cooked pork",
+   "D": "Twice-cooked pork is first boiled, then stir-fried with leeks and chili bean paste."
+  },
+  {
+   "A": "西南",
+   "B": "宫保鸡丁",
+   "C": "Kung Pao chicken",
+   "D": "Authentic Kung Pao chicken features dried chilies and Sichuan peppercorns."
+  },
+  {
+   "A": "西南",
+   "B": "水煮鱼",
+   "C": "fish fillets in chili oil",
+   "D": "The fish in this dish is poached in a sea of red chili oil."
+  },
+  {
+   "A": "西南",
+   "B": "辣子鸡",
+   "C": "laziji (spicy diced chicken)",
+   "D": "You have to hunt for the chicken pieces among a mountain of dried chilies."
+  },
+  {
+   "A": "西南",
+   "B": "酸菜鱼",
+   "C": "fish with pickled mustard greens",
+   "D": "Fish with pickled greens offers a tangy, less oily alternative to shuizhuyu."
+  },
+  {
+   "A": "西南",
+   "B": "毛血旺",
+   "C": "maoxuewang (spicy blood curd hotpot)",
+   "D": "Maoxuewang is a fiery Chongqing casserole with duck blood and tripe."
+  },
+  {
+   "A": "西南",
+   "B": "重庆火锅",
+   "C": "Chongqing hotpot",
+   "D": "Chongqing hotpot's broth is loaded with beef tallow and Sichuan peppercorns."
+  },
+  {
+   "A": "西南",
+   "B": "串串香",
+   "C": "chuan chuan (skewered delights)",
+   "D": "Chuan chuan lets you pick your own skewers to boil in spicy broth."
+  },
+  {
+   "A": "西南",
+   "B": "钵钵鸡",
+   "C": "bobo chicken (cold chicken in chili oil)",
+   "D": "Bobo chicken skewers are served cold, drenched in numbing chili oil."
+  },
+  {
+   "A": "西南",
+   "B": "过桥米线",
+   "C": "Crossing-the-Bridge noodles",
+   "D": "Crossing-the-Bridge noodles come with raw ingredients you cook yourself in hot broth."
+  },
+  {
+   "A": "西南",
+   "B": "汽锅鸡",
+   "C": "steam pot chicken",
+   "D": "Yunnan's steam pot chicken is cooked without water—the broth comes from condensation."
+  },
+  {
+   "A": "西南",
+   "B": "野生菌火锅",
+   "C": "wild mushroom hotpot",
+   "D": "Yunnan wild mushroom hotpot is only available in the rainy season."
+  },
+  {
+   "A": "西南",
+   "B": "酸汤鱼",
+   "C": "Guizhou sour soup fish",
+   "D": "Guizhou sour soup fish uses fermented tomatoes for its tangy broth."
+  },
+  {
+   "A": "西南",
+   "B": "丝娃娃",
+   "C": "Siwawa (vegetable wraps)",
+   "D": "Siwawa are tiny rice-paper wraps stuffed with shredded vegetables."
+  },
+  {
+   "A": "西南",
+   "B": "酥油茶配糌粑",
+   "C": "butter tea with tsampa",
+   "D": "Tibetans mix tsampa barley flour into butter tea for a warming meal."
+  },
+  {
+   "A": "西南",
+   "B": "藏香猪",
+   "C": "Tibetan fragrant pork",
+   "D": "Tibetan fragrant pork comes from free-range pigs fed on wild plants."
+  },
+  {
+   "A": "西北",
+   "B": "肉夹馍",
+   "C": "roujiamo (Chinese hamburger)",
+   "D": "A roujiamo stuffs braised pork into a crispy baked bun."
+  },
+  {
+   "A": "西北",
+   "B": "羊肉泡馍",
+   "C": "yangrou paomo (lamb soup with torn bread)",
+   "D": "Diners tear the bread themselves before it's simmered in lamb broth."
+  },
+  {
+   "A": "西北",
+   "B": "biangbiang面",
+   "C": "biangbiang noodles",
+   "D": "Biangbiang noodles are wide, belt-like noodles tossed with chili oil."
+  },
+  {
+   "A": "西北",
+   "B": "凉皮",
+   "C": "liangpi (cold skin noodles)",
+   "D": "Liangpi is a refreshing summer dish of cold noodles with chili and vinegar."
+  },
+  {
+   "A": "西北",
+   "B": "葫芦鸡",
+   "C": "hulu chicken (crispy fried chicken)",
+   "D": "Hulu chicken is fried whole until golden and crisp."
+  },
+  {
+   "A": "西北",
+   "B": "兰州牛肉面",
+   "C": "Lanzhou beef noodles",
+   "D": "A proper bowl of Lanzhou beef noodles has one clear broth, two white radish, three red chili and four green cilantro."
+  },
+  {
+   "A": "西北",
+   "B": "手抓羊肉",
+   "C": "hand-grabbed mutton",
+   "D": "Hand-grabbed mutton is boiled and eaten with the hands in Northwest China."
+  },
+  {
+   "A": "西北",
+   "B": "大盘鸡",
+   "C": "Xinjiang big plate chicken",
+   "D": "Xinjiang's big plate chicken is served over wide hand-pulled noodles."
+  },
+  {
+   "A": "西北",
+   "B": "烤羊肉串",
+   "C": "grilled lamb skewers",
+   "D": "Lamb skewers from Xinjiang are sprinkled with cumin and chili."
+  },
+  {
+   "A": "西北",
+   "B": "馕坑肉",
+   "C": "naan pit roasted meat",
+   "D": "Naan pit meat is roasted against the walls of a clay tandoor."
+  },
+  {
+   "A": "西北",
+   "B": "手抓饭",
+   "C": "Xinjiang pilaf (polo)",
+   "D": "Xinjiang pilaf cooks rice with lamb, carrots and yellow raisins."
+  },
+  {
+   "A": "西北",
+   "B": "酿皮",
+   "C": "nangpi (Qinghai cold noodles)",
+   "D": "Qinghai's nangpi is thicker and chewier than Shaanxi's liangpi."
+  },
+  {
+   "A": "西北",
+   "B": "羊杂碎",
+   "C": "lamb offal soup",
+   "D": "A bowl of lamb offal soup keeps Hohhot locals warm all winter."
+  },
+  {
+   "A": "港澳台",
+   "B": "台式卤肉饭",
+   "C": "lurou fan (Taiwanese braised pork rice)",
+   "D": "Lurou fan tops steamed rice with minced pork braised in soy sauce."
+  },
+  {
+   "A": "港澳台",
+   "B": "蚵仔煎",
+   "C": "Taiwanese oyster omelette",
+   "D": "The Taiwanese oyster omelette adds sweet potato starch for a chewy texture."
+  },
+  {
+   "A": "港澳台",
+   "B": "盐酥鸡",
+   "C": "Taiwanese popcorn chicken",
+   "D": "Night markets sell popcorn chicken dusted with basil and pepper salt."
+  },
+  {
+   "A": "港澳台",
+   "B": "三杯鸡",
+   "C": "three-cup chicken",
+   "D": "Three-cup chicken uses equal parts soy sauce, rice wine and sesame oil."
+  },
+  {
+   "A": "港澳台",
+   "B": "胡椒饼",
+   "C": "pepper bun",
+   "D": "Pepper buns are baked in clay ovens until the crust crackles."
+  },
+  {
+   "A": "港澳台",
+   "B": "葡式蛋挞",
+   "C": "Portuguese-style egg tart",
+   "D": "Macao's egg tarts have caramelized tops and flaky pastry shells."
+  },
+  {
+   "A": "港澳台",
+   "B": "干炒牛河",
+   "C": "stir-fried beef rice noodles (beef chow fun)",
+   "D": "A good beef chow fun has wok hei—the breath of the wok."
+  }
+ ],
+ "orders": [
+  {
+   "A": "进门/入座",
+   "B": "Hi, a table for two, please.",
+   "C": "你好，请给我们一张两人桌。"
+  },
+  {
+   "A": "进门/入座",
+   "B": "Do you have a table by the window?",
+   "C": "有靠窗的位置吗？"
+  },
+  {
+   "A": "进门/入座",
+   "B": "We're in a bit of a hurry—could we order quickly?",
+   "C": "我们有点赶时间，能快点点餐吗？"
+  },
+  {
+   "A": "进门/入座",
+   "B": "Could we see the menu, please?",
+   "C": "请给我们看一下菜单。"
+  },
+  {
+   "A": "进门/入座",
+   "B": "Is there an English menu available?",
+   "C": "有英文菜单吗？"
+  },
+  {
+   "A": "点菜",
+   "B": "What do you recommend?",
+   "C": "您有什么推荐菜吗？"
+  },
+  {
+   "A": "点菜",
+   "B": "What's your specialty here?",
+   "C": "你们店的招牌菜是什么？"
+  },
+  {
+   "A": "点菜",
+   "B": "I'd like to try some local specialties.",
+   "C": "我想尝尝本地特色菜。"
+  },
+  {
+   "A": "点菜",
+   "B": "Could we get one order of Mapo tofu?",
+   "C": "给我们来一份麻婆豆腐。"
+  },
+  {
+   "A": "点菜",
+   "B": "We'll have the Kung Pao chicken, please.",
+   "C": "我们要一份宫保鸡丁。"
+  },
+  {
+   "A": "点菜",
+   "B": "Let's go with the steamed fish head with chopped chili.",
+   "C": "就来剁椒鱼头吧。"
+  },
+  {
+   "A": "点菜",
+   "B": "One more of this, please.",
+   "C": "这个再要一份。"
+  },
+  {
+   "A": "点菜",
+   "B": "That's all for now, thank you.",
+   "C": "先点这些，谢谢。"
+  },
+  {
+   "A": "点菜",
+   "B": "Could we order a few more dishes?",
+   "C": "我们能再加几个菜吗？"
+  },
+  {
+   "A": "点菜",
+   "B": "What comes with this dish?",
+   "C": "这道菜配什么配菜/主食？"
+  },
+  {
+   "A": "点菜",
+   "B": "Is this dish served with rice?",
+   "C": "这道菜配米饭吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Is this dish very spicy?",
+   "C": "这道菜辣吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Could you make it less spicy?",
+   "C": "能做微辣一点的吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "No chili, please.",
+   "C": "请不要放辣椒。"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Could we get this with less oil?",
+   "C": "能少放点油吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Please go easy on the salt.",
+   "C": "请少放盐。"
+  },
+  {
+   "A": "口味偏好",
+   "B": "No MSG, please.",
+   "C": "请不放味精。"
+  },
+  {
+   "A": "口味偏好",
+   "B": "I don't eat pork. Is there anything you'd recommend?",
+   "C": "我不吃猪肉，有什么推荐吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Are there any vegetarian options?",
+   "C": "有素菜吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "I'm allergic to seafood.",
+   "C": "我对海鲜过敏。"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Does this contain peanuts?",
+   "C": "里面有花生吗？"
+  },
+  {
+   "A": "口味偏好",
+   "B": "Could you serve the sauce on the side?",
+   "C": "酱汁能单独放吗？"
+  },
+  {
+   "A": "分量与人数",
+   "B": "This is too much for two people—can we get a smaller portion?",
+   "C": "两个人吃太多了，有小份的吗？"
+  },
+  {
+   "A": "分量与人数",
+   "B": "Is this portion enough for three people?",
+   "C": "这份量够三个人吃吗？"
+  },
+  {
+   "A": "分量与人数",
+   "B": "Could we order a half portion?",
+   "C": "能点半份吗？"
+  },
+  {
+   "A": "分量与人数",
+   "B": "Let's add one more vegetable dish.",
+   "C": "再加一个素菜吧。"
+  },
+  {
+   "A": "分量与人数",
+   "B": "One bowl of rice each, please.",
+   "C": "每人一碗米饭。"
+  },
+  {
+   "A": "分量与人数",
+   "B": "Could we get some extra napkins?",
+   "C": "能给我们一些纸巾吗？"
+  },
+  {
+   "A": "饮品",
+   "B": "What drinks do you have?",
+   "C": "你们有什么饮料？"
+  },
+  {
+   "A": "饮品",
+   "B": "Two glasses of warm water, please.",
+   "C": "请来两杯温水。"
+  },
+  {
+   "A": "饮品",
+   "B": "Could we have a pot of hot tea?",
+   "C": "能来一壶热茶吗？"
+  },
+  {
+   "A": "饮品",
+   "B": "Is this beer served cold?",
+   "C": "这啤酒是冰的吗？"
+  },
+  {
+   "A": "加菜/催菜",
+   "B": "Excuse me, we've been waiting a while for our dishes.",
+   "C": "不好意思，我们的菜等了很久了。"
+  },
+  {
+   "A": "加菜/催菜",
+   "B": "Could you check on our order?",
+   "C": "能帮我们查一下点的菜吗？"
+  },
+  {
+   "A": "加菜/催菜",
+   "B": "We'd like to add one more dish.",
+   "C": "我们想再加一个菜。"
+  },
+  {
+   "A": "加菜/催菜",
+   "B": "Could you bring us another bowl?",
+   "C": "能再给我们拿一个碗吗？"
+  },
+  {
+   "A": "结账",
+   "B": "Could we have the bill, please?",
+   "C": "请结账。"
+  },
+  {
+   "A": "结账",
+   "B": "Check, please.",
+   "C": "买单。"
+  },
+  {
+   "A": "结账",
+   "B": "Can we pay by credit card / WeChat / Alipay?",
+   "C": "可以刷信用卡/微信/支付宝吗？"
+  },
+  {
+   "A": "结账",
+   "B": "Could we split the bill?",
+   "C": "可以分开结账吗？"
+  },
+  {
+   "A": "结账",
+   "B": "Let's go Dutch.",
+   "C": "我们AA制吧。"
+  },
+  {
+   "A": "结账",
+   "B": "Keep the change.",
+   "C": "不用找零了。"
+  },
+  {
+   "A": "结账",
+   "B": "Could we get a receipt, please?",
+   "C": "请给我们一张发票/收据。"
+  },
+  {
+   "A": "评价",
+   "B": "The food was delicious, thank you!",
+   "C": "菜很好吃，谢谢！"
+  },
+  {
+   "A": "评价",
+   "B": "This dish is amazing—what's in it?",
+   "C": "这道菜太好吃了，里面放了什么？"
+  },
+  {
+   "A": "评价",
+   "B": "Everything was wonderful. We'll definitely come back.",
+   "C": "都很好吃，我们一定再来。"
+  },
+  {
+   "A": "评价",
+   "B": "Could I get this to go?",
+   "C": "这个能打包吗？"
+  },
+  {
+   "A": "评价",
+   "B": "We'll take the leftovers home, please.",
+   "C": "剩菜请帮我们打包。"
+  }
+ ]
+}

@@ -16,7 +16,10 @@
   ]
 }
 
-item 字段: [en, zh, ex, ex_zh, sc] 或 [en, zh, ex, ex_zh, sc, tip] 或再追加 difficulty
+item 字段: [en, zh, ex, ex_zh, sc] 或 [en, zh, ex, ex_zh, sc, scene] 或 [en, zh, ex, ex_zh, sc, scene, tip]
+- item[5] = scene (str, subscene 筛选)
+- item[6] = tip (str, 记忆提示)
+- 也可在批次根声明 "scene_default" 统一指定
 
 用法:
   python expand_vocab.py            # 合并所有批次并写入
@@ -109,6 +112,7 @@ def main():
             print(f"[!] {bf}: 主题 {tid} 不存在, 跳过")
             continue
         default_diff = batch.get("difficulty", 2)
+        default_scene = batch.get("scene_default", "")
         extra_tags = list(batch.get("tags") or [])
 
         for item in batch.get("items", []):
@@ -120,8 +124,15 @@ def main():
             ex = str(item[2]).strip()
             ex_zh = str(item[3]).strip()
             sc = str(item[4]).strip() if len(item) > 4 else ""
-            tip = str(item[5]).strip() if len(item) > 5 else ""
-            diff = item[6] if len(item) > 6 and isinstance(item[6], int) else default_diff
+            tip = ""
+            diff = default_diff
+            scene = default_scene
+            # 6th: scene (str)
+            if len(item) > 5:
+                scene = str(item[5]).strip() or default_scene
+            # 7th: tip (str)
+            if len(item) > 6:
+                tip = str(item[6]).strip()
 
             key = (tid, en.lower())
             if not en or key in seen:
@@ -139,6 +150,7 @@ def main():
                 "ex": ex,
                 "ex_zh": ex_zh,
                 "sc": sc,
+                "scene": scene,
                 "tip": tip,
                 "difficulty": diff,
                 "tags": tags,
