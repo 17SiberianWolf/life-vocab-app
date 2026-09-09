@@ -2480,6 +2480,14 @@ def build(data_dir: str, out_path: str, config_path: str = None) -> None:
             print(f"[warn] 解析 {cfg_path} 失败: {e}")
     env = _read_env_file(os.path.join(HERE, ".env.local"))
 
+    # 音频策略: embed=false 时不嵌入 mp3 路径, speak() 自动走浏览器 TTS 兜底
+    if not cfg.get("audio", {}).get("embed", True):
+        _audio_keys = ("audio_word", "audio_example", "audio_word_slow", "audio_example_slow")
+        for _c in cards:
+            for _k in _audio_keys:
+                _c.pop(_k, None)
+        print("[OK] 音频路径已剥离, 发音走浏览器 TTS")
+
     app_data = {"topics": topics, "cards": cards}
     app_data_json = json.dumps(app_data, ensure_ascii=False, separators=(",", ":"))
     sync_block = _build_sync_block(cfg, env)

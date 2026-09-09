@@ -13,5 +13,8 @@
   },
   "pwa": {
     "install_prompt_enabled": true
+  },
+  "audio": {
+    "embed": false
   }
 }

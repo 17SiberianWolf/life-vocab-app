@@ -1,120 +1,103 @@
 # 阶段 5 · 部署与 DevOps
 
-## 文件结构
+## 部署方案：Cloudflare Pages
+
+> **免备案、零成本、国内可访问**。邮箱注册即可，无需信用卡。
+>
+> 历史路径：Vercel（`.vercel.app` 大陆受限，已废）→ CloudBase（控制台门槛高，已废）→ **当前统一走 Cloudflare Pages**。
+
+### 优势
+
+| 维度 | 说明 |
+|---|---|
+| 费用 | 完全免费（无限流量、无限请求、无限构建） |
+| 国内访问 | 走 Cloudflare 香港/日本节点，比 Vercel/Netlify 稳，秒开为主 |
+| 备案 | 不需要 |
+| 部署 | 连 GitHub 自动部署，5 分钟上线 |
+| HTTPS | 自动 |
+| 客服 | 在线客服 + 庞大社区 |
+
+### 发音策略（浏览器自带 TTS）
+
+`build-config.json` 中 `audio.embed = false` → 构建时剥离卡片 mp3 路径，`speak()` 直接走 `window.speechSynthesis` 兜底，零 404。
+`audio/`（2992 个 mp3）**不上传**。以后想恢复高清英音：改 `embed: true` + 重新构建 + 上传 audio/。
+
+### 项目结构
 
 ```
 life-vocab-app/
-├── index.html               # 由 build_index.py 生成的最终单文件应用
-├── data/                    # 源数据 (cards.json / topics.json)
-├── lib/                     # 阶段 5 新增:db / sync / auth-ui / install-prompt
-├── audio/                   # edge-tts 预生成 mp3 (可选,提升离线体验)
-├── icons/                   # PWA 图标
-├── supabase/                # 阶段 5 新增:SQL schema + setup 指南
-│   ├── SCHEMA.sql
-│   └── SETUP.md
-├── build-config.json        # 构建配置(含 Supabase enabled 开关)
-├── .env.local               # 本地敏感配置(不提交 git)
-├── .env.example             # 配置示例
-├── build_index.py           # 构建脚本
-├── test-stage5.js           # 阶段 5 测试
-├── vercel.json              # Vercel 部署配置
-├── README.md
-└── DEPLOY.md                # 本文件
+├── index.html              # 单文件应用（构建产物，~344KB）
+├── manifest.webmanifest    # PWA
+├── sw.js                   # Service Worker
+├── icons/                  # PWA 图标
+├── build-config.json       # 构建配置（Supabase + audio 策略）
+├── data/                   # 源数据（开发用，运行时已嵌入 index.html）
+├── lib/                    # 阶段5 库（开发用，已嵌入 index.html）
+├── supabase/               # SQL schema
+├── build_index.py          # 构建脚本
+├── gen_audio.py            # TTS 音频生成（按需）
+└── test-*.js               # 回归测试
 ```
+
+### Cloudflare Pages 部署步骤
+
+1. 注册账号：`https://dash.cloudflare.com/sign-up`（邮箱 + 密码，无需信用卡）
+2. 创建项目：左侧 `Workers & Pages` → `Create application` → 选 `Pages` 选项卡 → `Connect to Git` → 授权 GitHub → 勾选 `17SiberianWolf/life-vocab-app`
+3. 配置（**全部默认/留空**）：
+   - Project name: `life-vocab-app`（会得到 `life-vocab-app.pages.dev`）
+   - Framework preset: `None`
+   - Build command: **留空**（你的 `index.html` 已经是构建产物，直接 serve）
+   - Build output directory: `/`
+4. 点 `Save and Deploy`，等 1–2 分钟，得到 `https://life-vocab-app.pages.dev`
+
+每次 `git push` 到 main，Cloudflare 自动重新部署。
+
+### 国内访问预期
+
+- 大部分时间能秒开（Cloudflare 走香港/日本节点）
+- 偶发 2–3 秒延迟，比 Vercel 那种"经常打不开"强一个量级
+- Supabase 后端（境外）的速度是独立问题：登录/同步可能稍慢但通常能通
+
+### 已知风险
+
+1. **Supabase SDK 走 jsdelivr CDN**（`cdn.jsdelivr.net`）：国内可能慢/偶发失败 → 若登录加载异常，把 supabase-js 内联进 index.html
+2. **Supabase 后端在境外**：登录/同步速度独立于前端 CDN
+3. **Cloudflare Pages 不绑备案域名无法用国内节点**：默认 `*.pages.dev` 走海外节点，速度比国内 CDN 慢一些
 
 ---
 
 ## 本地开发循环
 
 ```bash
-# 1. 第一次: 配置 Supabase(见 supabase/SETUP.md)
-cp .env.example .env.local
-# 编辑 .env.local,填入 PROJECT_URL + ANON_KEY
-
-# 2. 修改 data/cards.json 或 topics.json 后,重新构建
+# 修改 data/cards.json 或 topics.json 后,重新构建
 python build_index.py
 
-# 3. 本地预览
-python -m http.server 8080
-# 访问 http://localhost:8080
+# 本地预览（带 no-cache 头,避免缓存旧版本）
+python serve.py 8173
+# 访问 http://localhost:8173
 ```
 
-## 部署到 Vercel
-
-> **配置来源说明**:Supabase 的 URL + anon key 已经写在 `build-config.json`(已提交 git)。
-> 构建时 `build_index.py` 会把它们注入 `index.html`,**无需**在 Vercel 里单独设环境变量。
-> anon/publishable key 是设计上可公开的(RLS 保证数据只属于本人),提交它安全;
-> 唯一绝不能进前端/仓库的是 `service_role` / `sb_secret_` key。
-
-### 一次性配置
-
-1. 把代码 push 到 GitHub(见下方 Git 小节)
-2. https://vercel.com → **Add New → Project** → 导入 GitHub 仓库 `life-vocab-app`
-3. 框架自动识别为 "Other"(读取 `vercel.json`),直接点 **Deploy**(无需改任何设置)
-
-### 自动部署
-
-每次 push 到 `main` 分支,Vercel 自动跑 `python3 build_index.py` 重新构建并部署。
-PR 可生成 Preview URL,适合先看效果再合并。
-
-### 关于音频(当前未部署)
-
-`audio/`(61MB mp3)被 `.gitignore` 排除,**线上用浏览器 TTS 发音兜底**(功能正常)。
-之后想上离线高清英音,两个办法:
-- 把 `audio/` 从 `.gitignore` 去掉、`git add audio`、重新 push(仓库变大);
-- 或上传到 Supabase Storage(免费 1GB)并改 `speak()` 里的音频 URL 指向 CDN。
-
-### 自定义域名
-
-Vercel → Settings → Domains → 添加 `vocab.yourdomain.com`
-
----
-
-## Git 化(本地→GitHub)
-
-### 初始化
+## Git 工作流
 
 ```bash
-cd life-vocab-app
-git init
 git add -A
-git commit -m "init: 阶段 5 (云同步 + 登录 + PWA)"
-git branch -M main
-git remote add origin https://github.com/<your-name>/life-vocab-app.git
-git push -u origin main
+git commit -m "feat: 描述改动"
+git push
+# Cloudflare Pages 自动部署，几秒后 https://life-vocab-app.pages.dev 更新
 ```
-
-### 后续迭代
-
-```bash
-# 改完代码
-python build_index.py        # 重新生成 index.html
-git add -A
-git commit -m "feat: 增加 X 功能"
-git push                       # Vercel 自动部署
-```
-
----
 
 ## 发布检查清单
 
-每次发版前:
+每次发版前：
 
 - [ ] `python build_index.py` 无错
 - [ ] `node test-stage5.js` 全过
-- [ ] `python -m http.server` 起服务,浏览器手动测:
-  - [ ] 双击 `index.html` 能打开(file:// 直开也可)
+- [ ] `python serve.py 8173` 起服务，浏览器手动测：
   - [ ] 顶栏右侧能登录/显示云端状态
-  - [ ] 玩游戏 → 答题 → 刷新页面 → 进度在(本地模式)
+  - [ ] 玩游戏 → 答题 → 刷新页面 → 进度在（本地模式）
   - [ ] 登录后 → 答题 → 等几秒 → toast「已同步」
   - [ ] 另一台设备登录同账号 → 看到进度
-- [ ] Supabase Dashboard → Table Editor → `cards_progress` 应有新行
-- [ ] 离线场景(DevTools → Application → Service Workers → Offline):
-  - [ ] 仍能打开
-  - [ ] 答案暂存
-  - [ ] 联网时自动 flush(toast「离线写已同步」)
-
----
+- [ ] Cloudflare Pages 部署成功（push 后自动）
 
 ## 已知限制 / 待办
 
@@ -123,4 +106,5 @@ git push                       # Vercel 自动部署
 | iOS Safari PWA 受限 | 通知/后台不全 | 鼓励 Chrome 安装 |
 | Web Speech API 仅 Chrome/Edge | 部分浏览器无录音评分 | 仍有自评三档兜底 |
 | RLS 限制 anon key 仅本人行 | 是设计 | 无 |
-| 单文件 482KB | 首次打开略慢 | audio 按需懒加载 |
+| 国内访问受 Cloudflare 节点限制 | 比国内 CDN 慢 | 已是最优解（其他更慢） |
+| 默认域名 .pages.dev 偶发慢 | 个人用够 | 未来买域名+备案可绑国内节点 |
