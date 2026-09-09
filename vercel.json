@@ -1,5 +1,4 @@
 {
-  "buildCommand": "python3 build_index.py",
   "outputDirectory": ".",
   "framework": null,
   "cleanUrls": true,
