@@ -12,9 +12,9 @@
 
 | 维度 | 现状 |
 |---|---|
-| 主题 | **11 个** —— 商务汇报 💼（置顶） / 厨房 🍳 / 水果 🍎 / 客厅 🛋 / 蔬菜 🥬 / 出行 🚗 / 购物 🛍 / 健康 💊 / 社交 👥 / 餐饮 🍽 / 家居 🏠 |
-| 词量 | **748 张**（商务 158 + 10 个生活主题 590） |
-| 离线音频 | **2992 个 mp3, 61 MB**（word + example + word_slow + example_slow · 全主题全词） |
+| 主题 | **24 个** —— 生活 11 个（厨房🍳/水果🍎/客厅🛋/蔬菜🥬/出行🚗/购物🛍/健康💊/社交👥/餐饮🍽/家居🏠 + 商务汇报💼）+ 扩充 13 个（学术雅思📚/职场办公💻/工业现场🏭/科技数码📱/功能表达💬/短语习语🔗/情绪性格😊/金钱金融💰/学习教育🎓/社会传媒📰/天气环境🌍/运动健康⚽/旅行出行✈） |
+| 词量 | **3032 张 / 2649 唯一词条**（原 748 精编 + 2284 扩充） |
+| 发音 | **浏览器内置 TTS**（构建时剥离 mp3 路径，零 404；`build-config.json` 的 `audio.embed` 改 true 可恢复离线音频） |
 | 玩法 | **6 个** —— Browse 浏览 / Match 碰碰乐 / Listen 听音 / Memory 连连看 / Gravity 消消乐 / 🎙 跟读 |
 | 跟读 | 顶级 nav「🎙 跟读」+ 主题卡入口：先听原声 → 录音跟读（MediaRecorder）→ 回放对比 → **真实评分（Web Speech API）** + 三档自评（流利/费劲/卡壳）|
 | 真实评分 | 录音后弹窗 [📊 评分单词] / [📊 评分例句] 按钮：在线聆听 → 词级命中比对 + 编辑距离模糊匹配 → 0-100 分 + 词级高亮 → ≥80 自动进 SRS known / <50 进 shadow pool / 进度仪表盘显示「发音均分」KPI |
@@ -81,7 +81,7 @@ python -m http.server 8080
 
 ### 双击即玩（最简单）
 
-直接双击 `index.html`，Chrome/Edge 会打开本应用。所有 748 张卡片的数据已嵌入，离线也能选主题、浏览词卡、玩 5 个游戏。TTS 默认走浏览器内置语音；前 10 个厨房词有离线 mp3 兜底。
+直接双击 `index.html`，Chrome/Edge 会打开本应用。所有 3032 张卡片的数据已嵌入，离线也能选主题、浏览词卡、玩 5 个游戏。发音走浏览器内置 TTS（`build-config.json` 的 `audio.embed=false`，无需任何 mp3）。
 
 ### 预生成离线音频（Windows 推荐用包装脚本）
 
@@ -92,7 +92,7 @@ setup.bat
 :: 之后: 任意命令都会用 venv 里的 python 跑
 run.bat --topic kitchen --limit 5      :: 厨房前 5 张,4 类音频共 20 个 mp3
 run.bat --topic fruit --limit 10       :: 水果前 10 张
-run.bat                                  :: 全量生成 748 张 (约 60-90 分钟)
+run.bat                                  :: 全量生成 (约 60-90 分钟, 当前默认构建不用音频)
 run.bat --rewrite                       :: 强制覆盖已有 mp3
 ```
 
@@ -137,10 +137,12 @@ python -m http.server 8080
 life-vocab-app/
 ├── index.html              # 单文件 Web 应用(数据已嵌入)
 ├── build_index.py          # 数据嵌入构建脚本
+├── expand_vocab.py         # 词库扩充合并流水线(--dry / --stats)
 ├── gen_audio.py            # edge-tts 批量音频生成
 ├── data/
-│   ├── topics.json         # 主题配置
-│   └── cards.json          # 卡片数据(590 张)
+│   ├── topics.json         # 主题配置(24 个)
+│   ├── cards.json          # 卡片数据(3032 张)
+│   └── expansion/          # 扩充批次源文件 batch_*.json
 ├── audio/                  # 离线 mp3
 │   ├── word/{topic}/{id}.mp3        常速词
 │   ├── example/{topic}/{id}.mp3     常速例句
@@ -220,11 +222,33 @@ life-vocab-app/
 
 `index.html` 内置的 `speak(text, slow)` 函数：
 
-1. **优先本地 mp3**（如果 `gen_audio.py` 已为该词生成）：`<audio src="audio/word/kitchen/1.mp3">`
+1. **优先本地 mp3**（仅当 `build-config.json` 的 `audio.embed=true` 且 `gen_audio.py` 已生成）：`<audio src="audio/word/kitchen/1.mp3">`
 2. **否则浏览器 SpeechSynthesis**：`SpeechSynthesisUtterance` 走 `en-GB`（可在设置切换 `en-US`）
 3. **语速**：`0.85` / `1.0` / `1.2`，通过 `<audio>.playbackRate` 与 `utterance.rate` 同时控制
 
+> **当前配置**：`audio.embed=false`——构建时剥离所有 mp3 路径，发音直接走浏览器 TTS，零 404、无需上传 61MB 音频。想恢复离线高清英音，把该值改回 `true` 并跑 `run.bat` 生成 mp3 即可。
+
 音色默认 `en-GB-RyanNeural`，与 `pm-english/` 项目一致——贴合欧陆商务英语习惯。`gen_audio.py` 支持 `--voice` 切换。
+
+---
+
+## 词库扩充（expand_vocab.py）
+
+新增词条走「批次源文件 → 合并流水线」，不改 `cards.json` 本身：
+
+```bash
+# 1. 在 data/expansion/ 下新建/追加批次文件
+#    格式: {"topic":"tech","items":[["en","中文释义","English example","例句翻译","场景标签"], ...]}
+
+python expand_vocab.py --dry     # 试运行: 只看会新增/跳过多少, 不写盘
+python expand_vocab.py           # 正式合并 (自动备份到 data/backup/)
+python expand_vocab.py --stats   # 查看各主题词条数
+python build_index.py            # 重新构建 index.html + dist/
+```
+
+- 去重键为 `(en.lower(), topic)`——同词同主题跳过，跨主题允许（如 bus 分属 transport 与 travel）
+- 新主题写在 `data/expansion/topics_new.json`，合并时自动并入 `data/topics.json`
+- 每次改完记得 bump `sw.js` 的 `CACHE_NAME`，否则已缓存用户拿不到新词库
 
 ---
 
