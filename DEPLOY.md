@@ -17,10 +17,14 @@
 | HTTPS | 自动 |
 | 客服 | 在线客服 + 庞大社区 |
 
-### 发音策略（浏览器自带 TTS）
+### 发音策略（同源 TTS 代理 + 本地兜底）
 
-`build-config.json` 中 `audio.embed = false` → 构建时剥离卡片 mp3 路径，`speak()` 直接走 `window.speechSynthesis` 兜底，零 404。
-`audio/`（2992 个 mp3）**不上传**。以后想恢复高清英音：改 `embed: true` + 重新构建 + 上传 audio/。
+- 在线发音统一走**同源 Cloudflare Pages Function 代理** `functions/tts.js`（路径 `/tts`），由 CF 边缘回源取音频，手机端不与任何外部域名直接通信（绕开运营商封锁）：
+  - **单词** → 有道 `dictvoice`（双口音回退）
+  - **例句** → **百度翻译 TTS 整句（主引擎，国内免密钥）+ Google 翻译 TTS（备份）**，整句自然朗读，不逐词拆读
+- 桌面端优先本地 `window.speechSynthesis`，静默失败自动转同源在线代理。
+- `build-config.json` 中 `audio.embed = false` → 构建时剥离卡片 mp3 路径，零 404。
+  `audio/`（2992 个 mp3）**不上传**。以后想恢复高清英音：改 `embed: true` + 重新构建 + 上传 audio/。
 
 ### 项目结构
 

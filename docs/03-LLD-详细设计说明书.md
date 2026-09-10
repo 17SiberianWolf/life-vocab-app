@@ -182,7 +182,9 @@ classDiagram
         +speakTTS(text, slow)
         +speakWeb(text, slow)
         +doSpeak(text, slow)
-        +playOnline(text, slow)
+        +playOnline(text, slow)        // 同源 /tts 代理（单词有道 / 例句百度主+Google备）
+        +_playOnlineSentence(text, slow)  // 例句整句一次请求，自然朗读（不逐词）
+        +playOnlineChunk(tokens)      // 仅整句真失败时的逐词保底
         +pickVoice(pref)
         +loadVoices()
         +unlockTTS()
@@ -625,18 +627,19 @@ flushSoon(): 防抖 500ms 后 flushQueue()
 ### 6.9 Service Worker 缓存策略
 
 ```
-策略: cache-first
+策略: 导航 network-first（离线回退缓存）+ 静态资源 cache-first
 
 install:  预缓存 ['./', './index.html', './manifest.webmanifest', 图标...]
           → skipWaiting()
 activate: 删除所有非当前 CACHE_NAME 的旧缓存 → clients.claim()
-fetch:    缓存命中 → 返回缓存
-          未命中   → 请求网络 → 成功后写缓存 → 返回
+fetch:    导航请求 → 先试网络，失败回退缓存（保证拿最新页面）
+          静态资源 → cache-first（命中即返回，未命中写缓存）
+controllerchange: 新 SW 接管后自动 location.reload() 一次（用户无需手动强刷两次）
 
-CACHE_NAME = 'wordmatch-v9'   // 每次发布必须 +1
+CACHE_NAME = 'wordmatch-v16'   // 每次发布必须 +1
 ```
 
-> **发布纪律**：由于 cache-first，若发布时不 bump `CACHE_NAME`，已安装的用户将**永远加载旧页面**，看不到任何修复。
+> **发布纪律**：导航已改 network-first + `controllerchange` 自动刷新，用户通常自动取到新页面；但静态资源仍 cache-first，若发布时不 bump `CACHE_NAME`，已安装用户可能**一直用旧 JS/词库**。故 bump 仍必须。
 
 ---
 
@@ -651,7 +654,7 @@ CACHE_NAME = 'wordmatch-v9'   // 每次发布必须 +1
 | 音频播放失败 | `audio.play().catch(() => speakTTS(...))` 兜底浏览器 TTS |
 | TTS 不可用（无 Web Speech） | 直接走 `playOnline()` 在线发音 |
 | 本地 TTS 静默失败（1.2s 无 `onstart`） | 置 `TTS.broken=true`，自动切换在线发音并提示，后续不再空等 |
-| 在线发音失败 | toast 提示检查网络 / 切换发音方式 |
+| 在线发音失败 | toast 提示检查网络 / 切换发音方式（仅在整句**真失败**时触发；已修复 `stalled` 缓冲事件与看门狗误报，长句不会再误报）|
 | 无可用音色（国行机缺 en-GB 包） | `pickVoice()` 放宽匹配 `en-GB → en* → 默认`；仍无则只设 `lang`，交给系统默认 |
 | `cancel()` 吞语句（Chrome/Android） | cancel 后让出一个 tick（90ms）再播；播报期间 keepAlive 每 9s resume（iOS 不启用） |
 | iOS 手势未解锁 | 首个 `touchstart/mousedown/keydown/click` 静默解锁 speechSynthesis + `<audio>` |
@@ -667,7 +670,7 @@ CACHE_NAME = 'wordmatch-v9'   // 每次发布必须 +1
 | 1 | `lib/*.js` 每个 IIFE 自带 `$` 等工具函数 | 跨模块引用闭包变量会 ReferenceError |
 | 2 | 词卡事件委托绑 `document` 级 | 词卡组件在浏览/复习/错题本三处复用 |
 | 3 | `stopAllGames()` + 回合身份校验双保险 | 单靠钩子无法覆盖未来新增的延迟逻辑 |
-| 4 | 每次发布 bump `CACHE_NAME` | cache-first 策略 |
+| 4 | 每次发布 bump `CACHE_NAME` | 静态资源 cache-first 策略（导航已 network-first，但 JS/词库仍走缓存）|
 | 5 | 构建时剥离 `audio_*` 字段 | 无音频文件分发，避免 404 与体积膨胀 |
 | 6 | 词库经 `expand_vocab.py` 合并 | 保证去重（按 en+topic）、备份、字段规范 |
 | 7 | 部署产物只取 `dist/` | 避免 `.git/`、`*.py`、`test-*.js` 混入线上 |

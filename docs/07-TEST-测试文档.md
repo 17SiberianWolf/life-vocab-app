@@ -3,9 +3,9 @@
 | 项 | 内容 |
 |---|---|
 | 文档编号 | LV-TEST-v1.0 |
-| 版本 | 1.0 |
+| 版本 | 1.1 |
 | 测试框架 | 自研轻量断言 + Node.js（无第三方测试框架） |
-| 断言总数 | **212** |
+| 断言总数 | **253**（7 套件，全绿；test-tts 41 项）|
 | 执行结果 | **全部通过（0 失败）** |
 | 执行日期 | 2026-09-10 |
 
@@ -64,14 +64,14 @@ node test-tts.js         # 移动端发音链路（TTS 降级 / 音色匹配 / �
 
 | 套件 | 断言数 | 覆盖模块 | 结果 |
 |---|---:|---|---|
-| `test-app.js` | 33 | MVP 基础、5 个玩法、主 IIFE 启动 | ✅ 通过 |
+| `test-app.js` | 33 | MVP 基础、6 种玩法、主 IIFE 启动 | ✅ 通过 |
 | `test-stage2.js` | 22 | 主题/词库数据、HTML 结构、脚本块可 eval | ✅ 通过 |
 | `test-business.js` | 19 | 商务主题子模块、字段完整性、浏览渲染 | ✅ 通过 |
 | `test-stage3.js` | 38 | 游戏逻辑（配对/听音/连连看/消消乐）、SRS | ✅ 通过 |
 | `test-stage4.js` | 34 | 跟读评分算法（编辑距离、命中矩阵、无 SR 降级） | ✅ 通过 |
 | `test-stage5.js` | 66 | Supabase 配置、IndexedDB、同步层、PWA、词库规模 | ✅ 通过 |
-| `test-tts.js` | 30 | 移动端发音：无 Web Speech 降级、音色宽松匹配、lang 兜底、静默失败 1.2s 转在线、发音方式开关、cancel 时序、手势解锁监听、语种映射、空文本 | ✅ 通过 |
-| **合计** | **242** | | **0 失败** |
+| `test-tts.js` | 41 | 移动端发音：同源 `/tts` 代理、双引擎路由（有道单词/百度例句主+Google 备）、整句一次请求不逐词、长句缓冲不误报、出声后看门狗解除、发音方式开关、发音自检、cancel 时序、手势解锁、语种映射、空文本 | ✅ 通过 |
+| **合计** | **253** | 7 套件（test-tts 41 项，其余 6 套件 212 项）| **0 失败** |
 
 ### 3.1 `test-tts.js` 说明（v1.0.1 新增）
 
@@ -160,7 +160,7 @@ node test-tts.js         # 移动端发音链路（TTS 降级 / 音色匹配 / �
 | 离线队列 | `syncQueue` store 存在 |
 | Service Worker | `sw.js` 含 install/activate/fetch 且 `CACHE_NAME` 已 bump |
 | PWA 图标 | 4 个尺寸 PNG 存在 |
-| 部署产物纯净 | `dist/` 仅含 index.html + manifest + sw.js + icons |
+| 部署产物纯净 | `dist/` 含 index.html + manifest + sw.js + icons + functions/tts.js（Pages Function 同源 TTS 代理）|
 
 ### 5.5 商务卡集成
 
@@ -251,4 +251,4 @@ v0.9 阶段发现并修复的缺陷，**均需作为回归基线**防止复发�
 | 新增游戏 | `test-stage3.js` 补充回合初始化与结算断言 |
 | 修改算法 | `test-stage4.js` 补充边界用例 |
 | 修改同步层 | `test-stage5.js` 补充契约断言 |
-| **任何发布** | 跑全部 6 个套件 + 人工回归清单 §6.3 + bump `CACHE_NAME` |
+| **任何发布** | 跑全部 7 个套件 + 人工回归清单 §6.3 + bump `CACHE_NAME` |

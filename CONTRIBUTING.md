@@ -66,11 +66,11 @@ python build_index.py
 
 ```bash
 # sw.js
-- const CACHE_NAME = 'wordmatch-v9';
-+ const CACHE_NAME = 'wordmatch-v10';
+- const CACHE_NAME = 'wordmatch-v16';
++ const CACHE_NAME = 'wordmatch-v17';
 ```
 
-> **原因**：Service Worker 是 cache-first 策略。不 bump 版本号，用户浏览器**永远加载旧页面**，你会收到"我这边还是老样子"的反馈。
+> **原因**：静态资源仍走 cache-first；不 bump 版本号，用户浏览器**永远加载旧 JS/词库**，你会收到"我这边还是老样子"的反馈。（导航请求已改 network-first + `controllerchange` 自动刷新，但静态资源仍需 bump。）
 > 这是本项目**最容易忘、后果最明显**的一步。
 
 ### 2.4 跑测试
@@ -79,12 +79,13 @@ python build_index.py
 node test-stage2.js     # 数据与基础功能
 node test-stage3.js     # 游戏逻辑
 node test-stage4.js     # 阶段4功能
-node test-stage5.js     # 云同步/PWA（65 项）
+node test-stage5.js     # 云同步/PWA
 node test-business.js   # 商务主题专项
 node test-app.js        # 主应用 JS 语法与结构
+node test-tts.js        # 移动端发音链路（同源 /tts、双引擎、长句不误报）
 ```
 
-全部输出 `OK` 且无 `FAIL` 才可提交。
+全部输出 `OK` 且无 `FAIL` 才可提交（7 套件合计 253 项全绿）。
 
 ---
 

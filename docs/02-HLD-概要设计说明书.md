@@ -120,7 +120,7 @@ graph TB
 | **Sync** | `lib/sync.js` | 359 | Supabase 客户端、认证、推/拉、离线队列、冲突合并 |
 | **AuthUI** | `lib/auth-ui.js` | 173 | 登录/注册弹窗、顶栏状态徽章、Toast |
 | **InstallPrompt** | `lib/install-prompt.js` | 79 | PWA 安装引导横幅 |
-| **Service Worker** | `sw.js` | ~70 | cache-first 资源缓存与版本清理 |
+| **Service Worker** | `sw.js` | ~70 | 导航 network-first（离线回退缓存）+ 静态资源 cache-first + 版本清理 |
 | **构建脚本** | `build_index.py` | 2608 | 读取词库与配置 → 生成单文件 `index.html` → 输出 `dist/` |
 | **词库流水线** | `expand_vocab.py` | ~200 | 批次合并、去重、备份、统计 |
 | **音频生成（可选）** | `gen_audio.py` | — | edge-tts 批量生成 mp3（当前配置下不启用） |
@@ -170,7 +170,7 @@ graph LR
 | 构建 | Python 脚本 `build_index.py` | ✅ 采用 |
 | 本地存储 | IndexedDB（经 LVDB 封装） | ✅ 采用 |
 | 云端后端 | Supabase（Auth + Postgres + PostgREST） | ✅ 采用 |
-| 发音 | 浏览器 Web Speech API（SpeechSynthesis） | ✅ 采用 |
+| 发音 | 浏览器 Web Speech API（SpeechSynthesis）+ 同源 TTS 代理（有道/百度/Google 双引擎） | ✅ 采用 |
 | 语音识别 | Web Speech Recognition | ✅ 采用 |
 | 离线 | Service Worker + Manifest（PWA） | ✅ 采用 |
 | 部署 | Cloudflare Pages | ✅ 采用 |
@@ -184,7 +184,7 @@ graph LR
 | UI 框架 | 原生 DOM | React / Vue | 应用规模小（单文件 940KB，其中绝大部分是词库数据）；引入框架会显著增加产物体积与构建复杂度，且无复杂状态共享需求 |
 | 本地存储 | IndexedDB | localStorage | localStorage 有 5MB 上限且仅存字符串；学习进度按"卡×模式"维度增长，且需存离线队列，IndexedDB 更合适 |
 | 云端 | Supabase | 自建后端 | 无运维成本；自带 Auth 与 RLS，安全模型现成；免费额度对个位数用户绰绰有余 |
-| 发音 | 浏览器 TTS | 预生成 mp3（edge-tts） | 2992 个 mp3 共 61MB，既拖慢首屏又无法随词库扩充线性扩展；且 TTS 已能满足学习需求。**注意**：mp3 生成脚本保留但构建时剥离（`build-config.json` → `audio.embed=false`） |
+| 发音 | 在线同源 TTS 代理（单词有道 / 例句百度主+Google 备）+ 本地 Web Speech 兜底 | 预生成 mp3（edge-tts） | 2992 个 mp3 共 61MB，既拖慢首屏又无法随词库扩充线性扩展；且 TTS 已能满足学习需求。**注意**：mp3 生成脚本保留但构建时剥离（`build-config.json` → `audio.embed=false`）。在线发音统一走同源 `functions/tts.js` 代理，手机端不依赖任何外部域名（绕开运营商封锁）|
 | 部署 | Cloudflare Pages | **Vercel** | `.vercel.app` 在中国大陆访问受限，实测打不开；`*.pages.dev` 可访问 |
 | 部署 | Cloudflare Pages | **腾讯云 CloudBase** | 控制台上手曲线陡、文档零散、免费版静态托管权限被锁（需升级 19.9 元/月） |
 | 部署 | Cloudflare Pages | 国内云 + ICP 备案 | 备案周期 1–2 周；本项目为个人学习工具，无强备案必要 |
@@ -260,7 +260,7 @@ sequenceDiagram
 | 构建命令 | **留空**（不依赖构建环境） |
 | 输出目录 | `dist` |
 | 生产域名 | `https://life-vocab-app.pages.dev` |
-| 缓存策略 | Service Worker cache-first，版本号 `wordmatch-v9` |
+| 缓存策略 | Service Worker 导航 network-first（离线回退缓存）+ 静态资源 cache-first，版本号 `wordmatch-v16` |
 
 **为何构建命令留空**：Cloudflare Pages 的构建环境不保证存在 python3（Vercel 曾因此失败），故把构建产物 `dist/` 直接提交进仓库，部署时零构建。
 
@@ -287,7 +287,7 @@ sequenceDiagram
 | DC-02 | 共用组件（如 `makeWordCard`）的事件委托必须绑在 `document` 级 | 绑在某个容器上 → 复用到新容器时按钮全部失效 |
 | DC-03 | 视图切换必须调用 `stopAllGames()` | 旧游戏计时器/TTS 在后台继续运行 |
 | DC-04 | 所有延迟回调（setTimeout/setInterval）必须做回合身份校验 | 离开视图后回调仍触发，可能弹窗或重置状态 |
-| DC-05 | 每次发布必须 bump `sw.js` 的 `CACHE_NAME` | cache-first 策略导致用户永远加载旧页面 |
+| DC-05 | 每次发布必须 bump `sw.js` 的 `CACHE_NAME` | 旧缓存导致用户永远加载旧页面（导航已改 network-first + `controllerchange` 自动刷新，但静态资源仍 cache-first，bump 仍必须）|
 | DC-06 | 词库扩充必须经 `expand_vocab.py`，禁止手改 `cards.json` | 数据格式不一致、重复词条、无备份 |
 
 > 以上每条约束都对应 v0.9 阶段发生过的真实缺陷。

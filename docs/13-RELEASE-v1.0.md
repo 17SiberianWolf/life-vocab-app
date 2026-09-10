@@ -45,8 +45,8 @@
 ### 2.3 工程交付
 
 - `expand_vocab.py` 词库合并流水线
-- `dist/` 纯净部署目录（7 个文件 / 365KB）
-- 6 个测试套件，全部通过
+- `dist/` 纯净部署目录（含 `functions/tts.js` 同源 TTS 代理）
+- 7 个测试套件，全部通过
 - CI/CD：`git push` → Cloudflare Pages 自动部署
 
 ---
@@ -85,9 +85,10 @@
 | test-stage2.js | 见 07-TEST | ✅ 全过 |
 | test-stage3.js | 见 07-TEST | ✅ 全过 |
 | test-stage4.js | 见 07-TEST | ✅ 全过 |
-| test-stage5.js | 65 | ✅ 全过 |
+| test-stage5.js | 见 07-TEST | ✅ 全过 |
 | test-business.js | 见 07-TEST | ✅ 全过 |
 | test-app.js | 见 07-TEST | ✅ 全过 |
+| test-tts.js | 见 07-TEST（41 项）| ✅ 全过 |
 
 ### 3.4 性能指标
 
@@ -124,9 +125,11 @@
 
 ### 5.2 已有用户（升级到 v1.0）
 
-⚠️ **必须按 `Ctrl + F5` 强制刷新一次**（Mac：`Cmd + Shift + R`）。
+> 当前版本已演进到 **v1.0.7**，后续 v1.0.1–v1.0.7 的发音修复与架构调整见 [CHANGELOG](./CHANGELOG.md)。
 
-原因：应用使用 PWA 离线缓存（cache-first），不强制刷新会一直加载旧版本，表现为：
+应用更新后通常**自动刷新**即生效（Service Worker 导航 network-first + `controllerchange` 自动重载）。若仍看到旧界面，按 `Ctrl + F5` 强制刷新一次（Mac：`Cmd + Shift + R`）。
+
+原因（历史 v1.0 场景）：应用使用 PWA 离线缓存，不强制刷新会一直加载旧版本，表现为：
 - 主题数还是 11 个
 - 今日复习还是显示 2293
 - 修复的 bug 依然存在

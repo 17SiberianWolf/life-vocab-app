@@ -168,20 +168,19 @@
 
 ---
 
-## ADR-009：Service Worker 采用 cache-first + 每次发版 bump CACHE_NAME
+## ADR-009：Service Worker 缓存策略（静态资源 cache-first）+ 每次发版 bump CACHE_NAME
 
-- **状态**：✅ 已采纳
+- **状态**：✅ 已采纳（**导航请求部分已被 [ADR-013](#adr-013导航请求改-network-first--controllerchange-自动刷新) 取代**）
 - **背景**：PWA 需要离线可用，但缓存会让用户拿不到新版。
 - **备选**：
   ① network-first（总是最新，但离线体验差、慢）
   ② **cache-first + 手动 bump 版本号**
   ③ stale-while-revalidate（折中，实现复杂）
-- **决策**：**②**
-- **理由**：词库 900KB，cache-first 能让二次访问**秒开**（这是学习工具的高频场景）；版本更新由开发者显式控制，行为可预测
+- **决策**：**②**（静态资源仍用 cache-first；导航请求见 ADR-013 改 network-first）
+- **理由**：词库 900KB，静态资源 cache-first 能让二次访问**秒开**（这是学习工具的高频场景）；版本更新由开发者显式控制，行为可预测
 - **后果**：
-  - ⚠️ **铁律：每次改代码必须把 `sw.js` 的 `CACHE_NAME` 版本号 +1**，否则用户永远加载旧页面
-  - ⚠️ 用户侧可能仍需 `Ctrl+F5` 才能立即拿到新版（浏览器对 SW 的更新时机有延迟）
-  - 版本演进：v1 → v2 → ... → **v9（当前）**
+  - ⚠️ **铁律：每次改代码必须把 `sw.js` 的 `CACHE_NAME` 版本号 +1**，否则用户永远加载旧 JS/词库
+  - 版本演进：v1 → v2 → ... → **v16（当前）**
 
 ---
 
@@ -223,6 +222,7 @@
   - ⚠️ 发音质量依赖用户系统已装的语音包（Windows 需安装英语语音包）
   - ⚠️ 离线仍可用（TTS 是浏览器本地能力），但**音色与在线时一致**
   - ✅ `audio/` 目录仍在 `.gitignore` 中，本地可随时重新生成
+  - 🔄 后续演进见 [ADR-013](#adr-013导航请求改-network-first--controllerchange-自动刷新)：v1.0.1 起移动端发音统一走**同源 `functions/tts.js` 代理**（单词有道 / 例句百度主+Google 备），不再依赖本地语音包；Edge TTS 因依赖 `Sec-*` 保留头、在 Cloudflare 运行时不可行而放弃
 
 ---
 
@@ -247,6 +247,31 @@
 
 ---
 
+## ADR-013：导航请求改 network-first + controllerchange 自动刷新；发音走同源 TTS 代理
+
+- **状态**：✅ 已采纳（2026-09-10，v1.0.5 / v1.0.7）
+- **背景**：
+  1. 连续数轮修复手机端发音后，出现"修了却像没生效"——根因是 SW 对导航请求用 **stale-while-revalidate**，会先返回旧缓存 HTML，用户要手动强刷两次才拿到新逻辑。
+  2. 移动端本地 Web Speech 不可靠（iOS 手势解锁 / 缺 en-GB 语音包 / 微信内核不支持），且手机运营商会拦截对 `dict.youdao.com`、`translate.google.com` 等**外部域名**的直接访问。
+- **决策（缓存策略）**：
+  - 导航请求改 **network-first**（在线取最新，离线才回退缓存）
+  - 注册 `controllerchange` 监听：新 SW 接管页面后**自动 `location.reload()` 一次**，用户无需手动强刷两次
+  - 静态资源仍 cache-first（见 [ADR-009](#adr-009service-worker-缓存策略静态资源-cache-first--每次发版-bump-cache_name)）
+- **决策（发音）**：
+  - 在线发音统一走**同源 Cloudflare Pages Function 代理** `functions/tts.js`（路径 `/tts`）：单词 → 有道 `dictvoice`（双口音回退）；例句 → **百度翻译 TTS 整句（主引擎，国内免密钥）+ Google 翻译 TTS（备份）**，整句自然朗读，不再逐词拆读
+  - 放弃 Edge TTS：其握手依赖 `Sec-MS-GEC` / `Sec-MS-GEC-Version` / `Date` 等 `Sec-*` 保留头，而 Cloudflare Worker/Pages Function 运行时**禁止客户端设置 `Sec-*` 头** → 握手被剥离、返回非 101，不可用
+- **理由**：
+  - 手机端只与本站点通信，由 CF 边缘回源取音频，**彻底绕开运营商对外部域名的 DNS 污染/封锁**（国内用户首屏实测可达）
+  - network-first + 自动刷新让修复"即时生效"，消除"修了像没修"的体验
+  - 百度翻译 TTS 免密钥、支持任意整句，是国内最快最稳的例句合成方案
+- **后果**：
+  - ✅ 例句整句自然朗读；单词/例句全程同源，手机运营商不再拦截
+  - ✅ 长句"误报失败"已修复（失败判定只在真失败，看门狗出声后自动解除）
+  - ⚠️ 仍须 bump `CACHE_NAME`（静态资源 cache-first）；版本演进至 **v16**
+  - ⚠️ 在线发音依赖本站点 `/tts` 接口可用性（CF 边缘稳定性）
+
+---
+
 ## ADR 索引
 
 | 编号 | 主题 | 关键结论 |
@@ -259,10 +284,11 @@
 | 006 | 部署平台 | Cloudflare Pages（Vercel/CloudBase 均失败） |
 | 007 | 构建产物 | `dist/` 入 git（绕开无 python3 环境） |
 | 008 | 生命周期 | `stopAllGames()` + 回合身份校验（双层防御） |
-| 009 | 缓存策略 | cache-first + 每次发版 bump 版本号 |
+| 009 | 缓存策略 | 静态资源 cache-first + 每次发版 bump 版本号（导航见 ADR-013） |
 | 010 | 安全边界 | 明文 anon key + RLS 是唯一防线 |
-| 011 | 发音方案 | 浏览器 TTS，剥离 mp3 |
+| 011 | 发音方案 | 浏览器 TTS 剥离 mp3（在线代理见 ADR-013） |
 | 012 | 复习计数 | 复习与引入分离，新词限量 |
+| 013 | 导航缓存 + 发音代理 | 导航 network-first + 自动刷新；发音同源 /tts（单词有道 / 例句百度主+Google 备）|
 
 ---
 
