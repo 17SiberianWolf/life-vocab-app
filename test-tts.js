@@ -306,6 +306,92 @@ function makeEnv(opts) {
        JSON.stringify(env.hints));
   }
 
+  // ------------------------------------------------------------
+  // 13. 服务端 /tts 代理引擎路由 (functions/tts.js)
+  //     回归: 有道词库缺条目(返回 500)的复合词(如 time-box)必须回退百度/Google。
+  //     否则代理返回 502 -> 客户端 <audio> 触发 error -> 弹
+  //     "在线发音加载失败, 尝试本地语音" -> 退化到手机端常不可用的本地语音 -> 表现为"这个词没声音"。
+  // ------------------------------------------------------------
+  section('13. 服务端 /tts 代理引擎路由 (单词失败必须回退)');
+  {
+    const { pathToFileURL } = require('url');
+    const realFetch = global.fetch;
+    const realCaches = global.caches;
+    const calls = [];
+    const hasPrefix = (u, s) => String(u).indexOf(s) >= 0;
+
+    // 可控上游: 有道对 time-box 返回 500(词库无此词, 实测真实行为), 其余返回音频
+    global.fetch = async (input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      calls.push(url);
+      if (hasPrefix(url, 'dict.youdao.com')) {
+        if (hasPrefix(decodeURIComponent(url), 'time-box')) {
+          return new Response('{"errorCode":50}', { status: 500, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response(new Uint8Array(4096), { status: 200, headers: { 'Content-Type': 'audio/mpeg' } });
+      }
+      if (hasPrefix(url, 'fanyi.baidu.com')) {
+        return new Response(new Uint8Array(6000), { status: 200, headers: { 'Content-Type': 'audio/mpeg' } });
+      }
+      if (hasPrefix(url, 'translate.google.com')) {
+        return new Response('blocked', { status: 500 });
+      }
+      return new Response('unexpected ' + url, { status: 404 });
+    };
+    // Cache API: 命中为空, 写入吞掉 (测试不关心缓存命中)
+    global.caches = { default: { match: async () => undefined, put: async () => {} } };
+
+    let mod = null;
+    try {
+      mod = await import(pathToFileURL(path.join(__dirname, 'functions', 'tts.js')).href);
+    } catch (err) {
+      ok('加载 functions/tts.js', false, err.message);
+    }
+    ok('加载 functions/tts.js (ESM, 导出 onRequest)', !!mod && typeof mod.onRequest === 'function');
+
+    if (mod && typeof mod.onRequest === 'function') {
+      const ctx = (q) => ({
+        request: new Request('https://life-vocab-app.pages.dev/tts' + q),
+        waitUntil: () => {},
+      });
+      const W = (w, type) => ctx('?audio=' + encodeURIComponent(w) + '&type=' + (type || 1));
+
+      // A. 有道缺条目 -> 回退百度 (本次 bug 的核心回归点)
+      calls.length = 0;
+      let r = await mod.onRequest(W('time-box'));
+      ok('有道 500 时单词仍返回 200 (不再 502)', r.status === 200, 'status=' + r.status);
+      ok('回退来源标记 X-TTS-Source: baidu-word', r.headers.get('X-TTS-Source') === 'baidu-word', String(r.headers.get('X-TTS-Source')));
+      const bufA = await r.arrayBuffer();
+      ok('回退音频为 audio/mpeg 且非空', /audio/.test(r.headers.get('Content-Type') || '') && bufA.byteLength > 0, 'len=' + bufA.byteLength);
+      ok('仍优先请求有道 (主引擎不跳过)', calls.some((u) => hasPrefix(u, 'dict.youdao.com')), JSON.stringify(calls));
+      ok('有道双口音都失败后才回退 (>=2 次有道)', calls.filter((u) => hasPrefix(u, 'dict.youdao.com')).length >= 2, JSON.stringify(calls));
+
+      // B. 有道命中的普通词 -> 不回退 (避免无谓地降级音质)
+      calls.length = 0;
+      r = await mod.onRequest(W('knife'));
+      ok('有道命中时标记 youdao-proxy', r.headers.get('X-TTS-Source') === 'youdao-proxy', String(r.headers.get('X-TTS-Source')));
+      ok('有道命中时不请求百度', !calls.some((u) => hasPrefix(u, 'fanyi.baidu.com')), JSON.stringify(calls));
+
+      // C. 含空格 -> 整句分支 (百度主引擎), 单词回退不影响该路由
+      calls.length = 0;
+      r = await mod.onRequest(W('good morning'));
+      ok('含空格文本仍走整句分支 (baidu-sentence)', r.headers.get('X-TTS-Source') === 'baidu-sentence', String(r.headers.get('X-TTS-Source')));
+
+      // D. 有道能命中 >40 字符的文本时会走整句分支; 校验单词/句子分流阈值
+      r = await mod.onRequest(W('su-per-ca-li-fra-gi-lis-ti-cex-pi-a-li-do-cious'));
+      ok('超 40 字符走整句分支 (非单词)', r.headers.get('X-TTS-Source') === 'baidu-sentence', String(r.headers.get('X-TTS-Source')));
+
+      // E. 参数校验
+      const bad = await mod.onRequest(ctx(''));
+      ok('缺少 audio 参数返回 400', bad.status === 400, 'status=' + bad.status);
+      const tooLong = await mod.onRequest(ctx('?audio=' + 'a'.repeat(1001)));
+      ok('超长 audio 参数返回 400', tooLong.status === 400, 'status=' + tooLong.status);
+    }
+
+    global.fetch = realFetch;
+    if (realCaches === undefined) delete global.caches; else global.caches = realCaches;
+  }
+
   console.log('\n=== 通过 ' + pass + ' 项, 失败 ' + fail + ' 项 ===');
   process.exit(fail === 0 ? 0 : 1);
 })();

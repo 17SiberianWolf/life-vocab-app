@@ -187,7 +187,7 @@ classDiagram
         +speakTTS(text, slow)
         +speakWeb(text, slow)
         +doSpeak(text, slow)
-        +playOnline(text, slow)        // 同源 /tts 代理（单词有道 / 例句百度主+Google备）
+        +playOnline(text, slow)        // 同源 /tts 代理（单词有道→百度→Google / 例句百度主+Google备）
         +_playOnlineSentence(text, slow)  // 例句整句一次请求，自然朗读（不逐词）
         +playOnlineChunk(tokens)      // 仅整句真失败时的逐词保底
         +pickVoice(pref)

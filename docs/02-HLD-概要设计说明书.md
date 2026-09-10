@@ -170,7 +170,7 @@ graph LR
 | 构建 | Python 脚本 `build_index.py` | ✅ 采用 |
 | 本地存储 | IndexedDB（经 LVDB 封装） | ✅ 采用 |
 | 云端后端 | Supabase（Auth + Postgres + PostgREST） | ✅ 采用 |
-| 发音 | 浏览器 Web Speech API（SpeechSynthesis）+ 同源 TTS 代理（有道/百度/Google 双引擎） | ✅ 采用 |
+| 发音 | 浏览器 Web Speech API（SpeechSynthesis）+ 同源 TTS 代理（有道/百度/Google 多引擎路由，单词失败自动回退） | ✅ 采用 |
 | 语音识别 | Web Speech Recognition | ✅ 采用 |
 | 离线 | Service Worker + Manifest（PWA） | ✅ 采用 |
 | 部署 | Cloudflare Pages | ✅ 采用 |
@@ -184,7 +184,7 @@ graph LR
 | UI 框架 | 原生 DOM | React / Vue | 应用规模小（单文件 940KB，其中绝大部分是词库数据）；引入框架会显著增加产物体积与构建复杂度，且无复杂状态共享需求 |
 | 本地存储 | IndexedDB | localStorage | localStorage 有 5MB 上限且仅存字符串；学习进度按"卡×模式"维度增长，且需存离线队列，IndexedDB 更合适 |
 | 云端 | Supabase | 自建后端 | 无运维成本；自带 Auth 与 RLS，安全模型现成；免费额度对个位数用户绰绰有余 |
-| 发音 | 在线同源 TTS 代理（单词有道 / 例句百度主+Google 备）+ 本地 Web Speech 兜底 | 预生成 mp3（edge-tts） | 2992 个 mp3 共 61MB，既拖慢首屏又无法随词库扩充线性扩展；且 TTS 已能满足学习需求。**注意**：mp3 生成脚本保留但构建时剥离（`build-config.json` → `audio.embed=false`）。在线发音统一走同源 `functions/tts.js` 代理，手机端不依赖任何外部域名（绕开运营商封锁）|
+| 发音 | 在线同源 TTS 代理（单词有道，有道无此词条时回退百度/Google / 例句百度主+Google 备）+ 本地 Web Speech 兜底 | 预生成 mp3（edge-tts） | 2992 个 mp3 共 61MB，既拖慢首屏又无法随词库扩充线性扩展；且 TTS 已能满足学习需求。**注意**：mp3 生成脚本保留但构建时剥离（`build-config.json` → `audio.embed=false`）。在线发音统一走同源 `functions/tts.js` 代理，手机端不依赖任何外部域名（绕开运营商封锁）|
 | 部署 | Cloudflare Pages | **Vercel** | `.vercel.app` 在中国大陆访问受限，实测打不开；`*.pages.dev` 可访问 |
 | 部署 | Cloudflare Pages | **腾讯云 CloudBase** | 控制台上手曲线陡、文档零散、免费版静态托管权限被锁（需升级 19.9 元/月） |
 | 部署 | Cloudflare Pages | 国内云 + ICP 备案 | 备案周期 1–2 周；本项目为个人学习工具，无强备案必要 |

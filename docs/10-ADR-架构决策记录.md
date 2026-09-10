@@ -258,7 +258,7 @@
   - 注册 `controllerchange` 监听：新 SW 接管页面后**自动 `location.reload()` 一次**，用户无需手动强刷两次
   - 静态资源仍 cache-first（见 [ADR-009](#adr-009service-worker-缓存策略静态资源-cache-first--每次发版-bump-cache_name)）
 - **决策（发音）**：
-  - 在线发音统一走**同源 Cloudflare Pages Function 代理** `functions/tts.js`（路径 `/tts`）：单词 → 有道 `dictvoice`（双口音回退）；例句 → **百度翻译 TTS 整句（主引擎，国内免密钥）+ Google 翻译 TTS（备份）**，整句自然朗读，不再逐词拆读
+  - 在线发音统一走**同源 Cloudflare Pages Function 代理** `functions/tts.js`（路径 `/tts`）：单词 → 有道 `dictvoice`（英/美双口音；**有道无此词条时回退百度/Google，v1.1.1 补**）；例句 → **百度翻译 TTS 整句（主引擎，国内免密钥）+ Google 翻译 TTS（备份）**，整句自然朗读，不再逐词拆读
   - 放弃 Edge TTS：其握手依赖 `Sec-MS-GEC` / `Sec-MS-GEC-Version` / `Date` 等 `Sec-*` 保留头，而 Cloudflare Worker/Pages Function 运行时**禁止客户端设置 `Sec-*` 头** → 握手被剥离、返回非 101，不可用
 - **理由**：
   - 手机端只与本站点通信，由 CF 边缘回源取音频，**彻底绕开运营商对外部域名的 DNS 污染/封锁**（国内用户首屏实测可达）
@@ -288,7 +288,7 @@
 | 010 | 安全边界 | 明文 anon key + RLS 是唯一防线 |
 | 011 | 发音方案 | 浏览器 TTS 剥离 mp3（在线代理见 ADR-013） |
 | 012 | 复习计数 | 复习与引入分离，新词限量 |
-| 013 | 导航缓存 + 发音代理 | 导航 network-first + 自动刷新；发音同源 /tts（单词有道 / 例句百度主+Google 备）|
+| 013 | 导航缓存 + 发音代理 | 导航 network-first + 自动刷新；发音同源 /tts（单词有道→百度→Google / 例句百度主+Google 备）|
 
 ---
 
