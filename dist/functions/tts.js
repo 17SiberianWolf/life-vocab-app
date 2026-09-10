@@ -16,29 +16,42 @@ export async function onRequest(context) {
     return new Response('missing or too long audio param', { status: 400 });
   }
 
-  const upstream =
-    'https://dict.youdao.com/dictvoice?audio=' +
-    encodeURIComponent(audio) + '&type=' + encodeURIComponent(type);
+  // 主口音 + 备选口音 (英式 type=1 / 美式 type=2), 任一命中即可, 提升生僻词覆盖率
+  const primary = (type === '2') ? '2' : '1';
+  const alt = (primary === '1') ? '2' : '1';
 
-  const cache = caches.default;
-  const cacheKey = new Request(upstream);
-
-  try {
-    // 1) 命中边缘缓存直接返回
-    let resp = await cache.match(cacheKey);
-    if (resp) return resp;
-
-    // 2) 回源取有道音频
-    resp = await fetch(upstream, {
+  async function fetchOne(t) {
+    const up =
+      'https://dict.youdao.com/dictvoice?audio=' +
+      encodeURIComponent(audio) + '&type=' + t;
+    const ck = new Request(up);
+    const hit = await cache.match(ck);
+    if (hit) return hit;
+    const r = await fetch(up, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; WordVocabTTS/1.0)',
         'Accept': '*/*',
         'Referer': 'https://dict.youdao.com/',
       },
     });
+    if (!r.ok) return null;
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('audio')) return null;   // 有道对不支持的词会返回 200 但非音频
+    return new Response(r.body, { status: 200, headers: r.headers });
+  }
 
-    if (!resp.ok) {
-      return new Response('upstream error ' + resp.status, { status: 502 });
+  const cache = caches.default;
+  try {
+    // 1) 主口音
+    let resp = await fetchOne(primary);
+    let used = primary;
+    // 2) 备选口音回退
+    if (!resp) {
+      resp = await fetchOne(alt);
+      used = alt;
+    }
+    if (!resp) {
+      return new Response('no audio for this word', { status: 502 });
     }
 
     // 3) 带上长缓存头回给浏览器, 并写入边缘缓存
@@ -46,12 +59,15 @@ export async function onRequest(context) {
     headers.set('Cache-Control', 'public, max-age=31536000, immutable');
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('X-TTS-Source', 'youdao-proxy');
+    headers.set('X-TTS-Type', used);
     const out = new Response(resp.body, { status: 200, headers });
-    // 后台写入缓存 (Pages Functions 支持 context.waitUntil)
+    const up =
+      'https://dict.youdao.com/dictvoice?audio=' +
+      encodeURIComponent(audio) + '&type=' + used;
     if (context.waitUntil) {
-      context.waitUntil(cache.put(cacheKey, out.clone()));
+      context.waitUntil(cache.put(new Request(up), out.clone()));
     } else {
-      await cache.put(cacheKey, out.clone());
+      await cache.put(new Request(up), out.clone());
     }
     return out;
   } catch (e) {

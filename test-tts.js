@@ -51,9 +51,16 @@ function makeEnv(opts) {
     constructor(src) {
       this.src = src; this.playbackRate = 1; this.played = false;
       this._listeners = {};
+      this._err = !!opts.onlineError;   // 模拟加载失败 -> 触发 error 事件
       audios.push(this);
     }
-    play() { this.played = true; calls.online++; return Promise.resolve(); }
+    play() {
+      this.played = true; calls.online++;
+      // 成功后异步触发 ended 让逐词链式播放推进; 失败则触发 error
+      const ev = this._err ? 'error' : 'ended';
+      setTimeout(() => this._emit(ev), 0);
+      return Promise.resolve();
+    }
     pause() {}
     addEventListener(type, fn) { (this._listeners[type] = this._listeners[type] || []).push(fn); }
     removeEventListener(type, fn) {
@@ -102,17 +109,19 @@ function makeEnv(opts) {
   };
 
   const STATE = { settings: Object.assign({ locale: 'en-GB', rate: 1, ttsMode: 'auto' }, opts.settings), cards: [] };
+  const hints = [];
+  const ttsHint = (msg, kind) => hints.push({ msg, kind });
 
   const api = new Function(
-    'window', 'document', 'navigator', 'Audio', 'STATE', 'console', 'alert', 'SpeechSynthesisUtterance',
+    'window', 'document', 'navigator', 'Audio', 'STATE', 'console', 'alert', 'SpeechSynthesisUtterance', 'ttsHint',
     ttsCode + '\nreturn { TTS, pickVoice, loadVoices, unlockTTS, playOnline, speakWeb, doSpeak, speakTTS, speak, runTTSDiag, IS_IOS };'
-  )(window_, document_, navigator_, AudioEl, STATE, console, () => {}, SpeechSynthesisUtterance);
+  )(window_, document_, navigator_, AudioEl, STATE, console, () => {}, SpeechSynthesisUtterance, ttsHint);
 
   // 真实播报语句 (排除手势解锁用的空白 utterance / 静音 wav)
   const realUtterances = () => utterances.filter(u => u.text !== ' ');
   const realAudios = () => audios.filter(a => String(a.src).indexOf('data:') !== 0);
 
-  return { api, utterances, realUtterances, audios, realAudios, listeners, calls, synth, STATE, window: window_ };
+  return { api, utterances, realUtterances, audios, realAudios, listeners, calls, synth, STATE, window: window_, hints };
 }
 
 (async function run() {
@@ -241,6 +250,43 @@ function makeEnv(opts) {
     env.api.speakTTS('', false);
     env.api.speakTTS(null, false);
     ok('空文本不触发任何播放', env.calls.speak === 0 && env.realAudios().length === 0);
+  }
+
+  section('10. 例句按词拆分顺序播放 (修复有道整句 500)');
+  {
+    const env = makeEnv({ withoutSynth: true });
+    env.api.speakTTS('Please hand me the knife.', false);
+    ok('首词立即出声', env.realAudios().length >= 1, 'audios=' + env.realAudios().length);
+    ok('首词为 Please', env.realAudios()[0] && env.realAudios()[0].src.indexOf('audio=Please') >= 0, env.realAudios()[0] && env.realAudios()[0].src);
+    await sleep(80);   // 让逐词链式播放推进
+    ok('整句被拆成多个词并逐个播放', env.realAudios().length >= 4, 'audios=' + env.realAudios().length);
+    ok('末词去标点 -> knife', env.realAudios().slice(-1)[0] && env.realAudios().slice(-1)[0].src.indexOf('audio=knife') >= 0, env.realAudios().slice(-1)[0] && env.realAudios().slice(-1)[0].src);
+    ok('每个词都走同源 /tts 代理', env.realAudios().every(a => a.src.indexOf('/tts?audio=') >= 0));
+  }
+  {
+    const env = makeEnv({ withoutSynth: true });
+    env.api.speakTTS("I can't find my wallet.", false);
+    await sleep(80);
+    ok('含撇号单词保留 (I/can\'t/...) 不丢词', env.realAudios().length >= 4, 'audios=' + env.realAudios().length);
+    ok('can\'t 未被拆坏', env.realAudios().some(a => a.src.indexOf('audio=can') >= 0));
+  }
+
+  section('11. 单 token 在线失败不卡死 + 可恢复');
+  {
+    const env = makeEnv({ withoutSynth: true, onlineError: true, settings: { ttsMode: 'online' } });
+    env.api.speakTTS('computer', false);   // 单 token 失败
+    await sleep(80);
+    ok('失败后链式已推进 (创建过 audio)', env.realAudios().length >= 1);
+    // 再发一句, 验证失败后链路仍可继续播放(说明 advance 已执行、未卡死)
+    env.api.speakTTS('hello world', false);
+    await sleep(80);
+    ok('失败后可继续播放新文本 (不卡死)', env.realAudios().length >= 3, 'audios=' + env.realAudios().length);
+  }
+  {
+    const env = makeEnv({ withoutSynth: true, onlineError: true });
+    env.api.speakTTS('This sentence will partly fail.', false);
+    await sleep(120);
+    ok('整句失败也走完所有 token 不卡死', env.realAudios().length >= 1);
   }
 
   console.log('\n=== 通过 ' + pass + ' 项, 失败 ' + fail + ' 项 ===');

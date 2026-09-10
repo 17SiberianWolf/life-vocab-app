@@ -1637,6 +1637,8 @@
     // 停掉正在播报的 TTS / 预载音频 / 在线发音
     if (_currentAudio) { try { _currentAudio.pause(); } catch (e) {} _currentAudio = null; }
     if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
+    _onlineEpoch++;   // 使任何待执行的 advance 回调失效
+    _onlineQueue = [];
     if (typeof ttsStopKeepAlive === 'function') ttsStopKeepAlive();
     if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
   }
@@ -1971,32 +1973,76 @@
   // 在线发音兜底: 本地 TTS 不可用时(微信内核 / 无英文语音包 / iOS 静音开关)启用
   // v1.0.3 起改为同源代理 /tts (Cloudflare Pages Function 转发有道接口),
   // 彻底绕开手机运营商对 dict.youdao.com 等外部域名的封锁。
+  // 在线发音: 走同源 /tts 代理(手机只与本站点通信, 由 CF 边缘取有道音频)
+  // 有道 dictvoice 仅支持单词, 整句会 500; 故长文本按词拆分, 逐词顺序播放。
   let _onlineAudio = null;
+  let _onlineQueue = [];
+  let _onlinePlaying = false;
+  let _onlineSingle = false;
+  let _onlineEpoch = 0;
+
+  // 把文本拆成可发音的 token: 单词整体, 句子按词
+  function splitTts(text) {
+    const t = String(text || '').trim();
+    if (!t) return [];
+    // 无空格且较短 -> 整词请求(有道对单词支持最好)
+    if (!/\s/.test(t) && t.length <= 40) return [t];
+    // 句子: 按空白拆词, 去除首尾标点(保留连字符与缩写撇号)
+    const toks = t.split(/\s+/)
+      .map(w => w.replace(/^[^\w'-]+|[^\w'-]+$/g, ''))
+      .filter(w => w.length);
+    return toks.length ? toks : [t];
+  }
+
   function playOnline(text, slow, silentFail) {
     if (!text) return false;
     if (STATE.settings.ttsMode === 'local') return false;
-    try {
-      if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
-      const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
-      // 同源代理: 手机只与本站点通信, 由 CF 边缘取有道音频
-      const a = new Audio('/tts?audio=' + encodeURIComponent(text) + '&type=' + type);
-      a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
-      _onlineAudio = a;
-      let failed = false;
-      const onErr = () => {
-        if (failed) return; failed = true;
-        if (!silentFail) ttsHint('在线发音加载失败,请检查网络或切换发音方式', 'err');
-      };
-      // iOS Safari 加载失败时不 reject play() 的 promise, 只触发 error 事件 -> 必须监听
-      a.addEventListener('error', onErr);
-      a.addEventListener('stalled', onErr);
-      const p = a.play();
-      if (p && p.catch) p.catch(onErr);
-      return true;
-    } catch (e) {
-      if (!silentFail) ttsHint('当前环境无法发音,请用系统浏览器打开并关闭静音', 'warn');
-      return false;
+    // 打断当前播放, 启用新请求(epoch 使任何待执行回调失效)
+    if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
+    _onlinePlaying = false;
+    _onlineEpoch++;
+    const chunks = splitTts(text);
+    if (!chunks.length) return false;
+    _onlineQueue = chunks;
+    _onlineSingle = (chunks.length === 1);
+    _playOnlineNext(slow, silentFail, _onlineEpoch);
+    return true;
+  }
+
+  function _playOnlineNext(slow, silentFail, epoch) {
+    if (epoch !== _onlineEpoch) return;          // 已有新请求, 放弃本帧
+    let item = null;
+    while (_onlineQueue.length) {
+      const t = _onlineQueue.shift();
+      if (t && t.trim()) { item = t.trim(); break; }
     }
+    if (!item) { _onlinePlaying = false; _onlineAudio = null; return; }
+    _onlinePlaying = true;
+    const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
+    const a = new Audio('/tts?audio=' + encodeURIComponent(item) + '&type=' + type);
+    a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
+    _onlineAudio = a;
+    let done = false;
+    const advance = () => {
+      if (done) return; done = true;
+      if (_onlineAudio === a) _onlineAudio = null;
+      _onlinePlaying = false;
+      _playOnlineNext(slow, silentFail, epoch);
+    };
+    a.addEventListener('ended', advance);
+    a.addEventListener('error', () => {
+      // 该词在线发音失败: 单 token 时提示并尝试本地语音兜底
+      if (_onlineSingle && !silentFail) {
+        ttsHint('在线发音加载失败, 尝试本地语音', 'warn');
+        try { if (TTS.ok) { loadVoices(); unlockTTS(); speakWeb(item, slow); } } catch (e) {}
+      }
+      advance();
+    });
+    a.addEventListener('stalled', advance);
+    const p = a.play();
+    if (p && p.catch) p.catch(advance);
+    // 兜底: 单 token 卡死(既不 ended 也不 error)时强制推进, 避免整句卡住
+    setTimeout(advance, 4000);
   }
 
   function speakWeb(text, slow) {
