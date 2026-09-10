@@ -6,7 +6,7 @@
  *       请用 `python -m http.server 8080` 或 run.bat --server 启动。
  * ============================================================ */
 
-const CACHE_NAME = 'wordmatch-v13';
+const CACHE_NAME = 'wordmatch-v14';
 const urlsToCache = [
   './',
   './index.html',
@@ -52,28 +52,22 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = url.origin === self.location.origin;
   const isAsset = /\.(mp3|png|jpg|jpeg|svg|webmanifest|css|js)$/i.test(request.url);
 
-  // 导航请求: 有缓存先用缓存秒开并后台更新; 无缓存直接走网络
-  // (旧实现在网络失败时 respondWith(undefined), 会直接把页面变成"打不开")
+  // 导航请求: 网络优先 (始终取最新 index.html), 离线才回退缓存。
+  // 旧实现用 stale-while-revalidate, 会先返回旧缓存 HTML, 导致用户要手动刷两次
+  // 才能拿到含新逻辑的页面 (TTS 修了多次却像没生效的元凶之一)。
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match('./index.html').then((cached) => {
-        if (cached) {
-          fetch(request).then((resp) => {
-            if (resp && resp.status === 200) {
-              const copy = resp.clone();
-              caches.open(CACHE_NAME).then((c) => c.put('./index.html', copy));
-            }
-          }).catch(() => {});
-          return cached;
-        }
-        return fetch(request).then((resp) => {
+      fetch(request)
+        .then((resp) => {
           if (resp && resp.status === 200) {
             const copy = resp.clone();
             caches.open(CACHE_NAME).then((c) => c.put('./index.html', copy));
           }
           return resp;
-        });
-      })
+        })
+        .catch(() =>
+          caches.match('./index.html').then((c) => c || fetch(request))
+        )
     );
     return;
   }

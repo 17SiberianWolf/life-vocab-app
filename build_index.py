@@ -2729,6 +2729,13 @@ __SYNC_SCRIPTS__
 // file:// 双击打开时静默跳过, 不影响普通使用
 // ============================================================
 if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+  // 新 SW 接管页面后自动刷新一次, 让用户无需手动刷两次就能拿到含新逻辑的页面
+  let _swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swRefreshing) return;
+    _swRefreshing = true;
+    location.reload();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(
       (reg) => console.log('[PWA] SW registered, scope:', reg.scope),
