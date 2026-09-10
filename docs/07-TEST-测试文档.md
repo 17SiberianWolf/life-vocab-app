@@ -53,6 +53,7 @@ node test-stage4.js      # 阶段 4：跟读评分
 node test-stage5.js      # 阶段 5：云同步与 PWA
 node test-business.js    # 阶段 2.5：商务卡集成
 node test-app.js         # 阶段 1：MVP 与 5 种玩法
+node test-tts.js         # 移动端发音链路（TTS 降级 / 音色匹配 / 手势解锁）
 ```
 
 退出码：全部通过时 0；任一断言失败时输出 `!! 有 N 项失败` 并抛错。
@@ -69,7 +70,26 @@ node test-app.js         # 阶段 1：MVP 与 5 种玩法
 | `test-stage3.js` | 38 | 游戏逻辑（配对/听音/连连看/消消乐）、SRS | ✅ 通过 |
 | `test-stage4.js` | 34 | 跟读评分算法（编辑距离、命中矩阵、无 SR 降级） | ✅ 通过 |
 | `test-stage5.js` | 66 | Supabase 配置、IndexedDB、同步层、PWA、词库规模 | ✅ 通过 |
-| **合计** | **212** | | **0 失败** |
+| `test-tts.js` | 30 | 移动端发音：无 Web Speech 降级、音色宽松匹配、lang 兜底、静默失败 1.2s 转在线、发音方式开关、cancel 时序、手势解锁监听、语种映射、空文本 | ✅ 通过 |
+| **合计** | **242** | | **0 失败** |
+
+### 3.1 `test-tts.js` 说明（v1.0.1 新增）
+
+发音链路无法在 Node 中真实发声，故采用**可控 mock + 时序断言**：从构建产物 `index.html` 中
+截取 TTS 代码段（自包含，仅依赖注入的 `window / document / navigator / Audio / STATE`），
+用 `new Function` 注入 mock 后导出内部函数逐一验证。
+
+关键 mock 设计：
+
+| mock | 说明 |
+|---|---|
+| `silentFail: true` | `speak()` 不触发 `onstart`，模拟手机端静默失败 |
+| `voices: []` | 模拟 iOS / 国行 Android 首次 `getVoices()` 返回空 |
+| `speaking: true` | 模拟正在播报，验证先 cancel 再延迟补播 |
+| `withoutSynth: true` | 模拟微信内核等不支持 Web Speech 的环境 |
+
+空白 utterance（`text === ' '`）与静音 wav（`data:` 开头）属手势解锁用途，断言时过滤，
+避免干扰正常播报计数。
 
 ---
 

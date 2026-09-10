@@ -176,8 +176,17 @@ classDiagram
 
     class TTS {
         -_currentAudio
+        -_onlineAudio
+        -TTS.voices / unlocked / broken
         +speak(text, slow)
-        +fallbackTTS(text, slow)
+        +speakTTS(text, slow)
+        +speakWeb(text, slow)
+        +doSpeak(text, slow)
+        +playOnline(text, slow)
+        +pickVoice(pref)
+        +loadVoices()
+        +unlockTTS()
+        +runTTSDiag()
     }
 
     class Scorer {
@@ -639,8 +648,13 @@ CACHE_NAME = 'wordmatch-v9'   // 每次发布必须 +1
 | supabase-js SDK 未加载（CDN 失败） | 降级本地模式，`reason: 'sdk-missing'` |
 | 网络请求失败 | 写入离线队列，联网自动重试 |
 | IndexedDB 不可用 | `get`/`getAll` 捕获异常返回 null/[]，不中断主流程 |
-| 音频播放失败 | `audio.play().catch(() => fallbackTTS(...))` 兜底浏览器 TTS |
-| TTS 不可用 | `if (!('speechSynthesis' in window)) return;` 静默跳过 |
+| 音频播放失败 | `audio.play().catch(() => speakTTS(...))` 兜底浏览器 TTS |
+| TTS 不可用（无 Web Speech） | 直接走 `playOnline()` 在线发音 |
+| 本地 TTS 静默失败（1.2s 无 `onstart`） | 置 `TTS.broken=true`，自动切换在线发音并提示，后续不再空等 |
+| 在线发音失败 | toast 提示检查网络 / 切换发音方式 |
+| 无可用音色（国行机缺 en-GB 包） | `pickVoice()` 放宽匹配 `en-GB → en* → 默认`；仍无则只设 `lang`，交给系统默认 |
+| `cancel()` 吞语句（Chrome/Android） | cancel 后让出一个 tick（90ms）再播；播报期间 keepAlive 每 9s resume（iOS 不启用） |
+| iOS 手势未解锁 | 首个 `touchstart/mousedown/keydown/click` 静默解锁 speechSynthesis + `<audio>` |
 | 词卡 `tip` 字段缺失 | 模板中 `c.tip ? ... : ''` 优雅降级 |
 | 事件委托找不到 `cardEl` | `if (!cardEl) return;` 防止误伤 |
 

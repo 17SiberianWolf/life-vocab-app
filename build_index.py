@@ -137,6 +137,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     cursor: pointer; user-select: none;
   }
   .pill:hover { background: var(--bg-soft); }
+  /* 发音按钮按下瞬间的反馈: 让用户能区分"没点到"和"点了没声音" */
+  .pill.speaking { background: var(--accent); color: #fff; border-color: var(--accent); }
   .pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .pill.good.active { background: var(--good); border-color: var(--good); }
   .pill.warn.active { background: var(--warn); border-color: var(--warn); }
@@ -339,6 +341,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     main { padding: 12px; }
     header.top { padding: 8px 12px; }
     .word-card { padding: 12px; }
+    /* 移动端放大发音/标记按钮: 原高度约 24px, 手指容易点空, 造成"以为点了没声音" */
+    .pill { padding: 8px 14px; font-size: 13px; min-height: 34px; }
     .game-btn { font-size: 11px; padding: 3px 8px; }
   }
 
@@ -667,7 +671,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       </div>
     </div>
     <div class="panel" style="margin-top:14px;">
-      <h3>语音 (在线 TTS 仅作离线兜底)</h3>
+      <h3>语音与发音</h3>
       <div class="row">
         <label>
           <span>语种</span>
@@ -677,8 +681,23 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </select>
         </label>
       </div>
+      <div class="row" style="margin-top:10px;">
+        <label>
+          <span>发音方式</span>
+          <select id="ttsModeSel">
+            <option value="auto" selected>自动 (本地优先,失败转在线)</option>
+            <option value="local">仅本地语音 (可离线)</option>
+            <option value="online">仅在线音频 (需联网,音质稳)</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="navbtn" id="btnTTSTest">🔊 发音自检</button>
+      </div>
       <p style="font-size:12px; color: var(--text-muted); margin: 8px 0 0;">
-        如已预生成 mp3 (本地包),优先使用预生成 mp3 。
+        手机听不到声音时:先点「发音自检」;若显示音色为 0 个或本地不可用,
+        请把发音方式改为「仅在线音频」,并确认手机未开静音开关、用 Safari / Chrome 打开
+        (微信内置浏览器不支持发音)。
       </p>
     </div>
     <div class="panel" style="margin-top:14px;">
@@ -856,9 +875,11 @@ __SYNC_SCRIPTS__
   }
   function stopAllGames() {
     stopMatchGame(); stopMemoryGame(); stopListenGame(); stopGravityGame();
-    // 停掉正在播报的 TTS / 预载音频
+    // 停掉正在播报的 TTS / 预载音频 / 在线发音
     if (_currentAudio) { try { _currentAudio.pause(); } catch (e) {} _currentAudio = null; }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
+    if (typeof ttsStopKeepAlive === 'function') ttsStopKeepAlive();
+    if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
   }
 
   function show(name, topicId) {
@@ -1038,6 +1059,14 @@ __SYNC_SCRIPTS__
     return div;
   }
 
+  // 发音按钮按下反馈 (移动端排障: 区分"没点到"和"点了但没声音")
+  function flashBtn(btn) {
+    if (!btn) return;
+    btn.classList.add('speaking');
+    clearTimeout(btn._spkT);
+    btn._spkT = setTimeout(() => btn.classList.remove('speaking'), 900);
+  }
+
   // 词卡按钮事件委托: 绑定在 document 级, 覆盖所有出现词卡的视图
   // (原 bug: 只绑在浏览页 #cardList 上, 错题本/SRS 复习页的词卡按钮全部无效)
   document.addEventListener('click', (e) => {
@@ -1049,9 +1078,12 @@ __SYNC_SCRIPTS__
     const c = STATE.cards.find(x => x.id === id);
     if (!c) return;
     const act = btn.dataset.act;
-    if (act === 'tts-word') speak(c.en, false);
-    if (act === 'tts-ex') speak(c.ex, false);
-    if (act === 'tts-slow') speak(c.en, true);
+    if (act === 'tts-word' || act === 'tts-ex' || act === 'tts-slow') {
+      flashBtn(btn);
+      if (act === 'tts-word') speak(c.en, false);
+      else if (act === 'tts-ex') speak(c.ex, false);
+      else speak(c.en, true);
+    }
     if (act === 'mark-known') setCardStatus(c, 'known', btn, cardEl.querySelector('[data-act=mark-blur]'));
     if (act === 'mark-blur') setCardStatus(c, 'shadow', btn, cardEl.querySelector('[data-act=mark-known]'));
   });
@@ -1063,8 +1095,192 @@ __SYNC_SCRIPTS__
   }
 
   // ============================================================
-  // TTS
+  // TTS 引擎 v2 · 移动端健壮版
+  // ------------------------------------------------------------
+  // 手机端听不到声音的 5 个根因与对策:
+  //  ① iOS Safari: speak() 首次必须在"用户手势"同步调用栈内触发, 否则永久静默
+  //     -> 首个 touchstart / mousedown 时静默解锁 (播一条空白 utterance)
+  //  ② iOS / Android: getVoices() 首次返回空数组, 且 onvoiceschanged 未必触发
+  //     -> 主动轮询 0 / 300 / 1200ms 缓存音色列表
+  //  ③ 国行手机默认没有 en-GB 语音包, 指定 en-GB 时静默无声
+  //     -> 音色匹配放宽: en-GB -> 任意 en* -> 系统默认, 且 u.lang 跟随实际音色
+  //  ④ Chrome / Android: cancel() 后立刻 speak 会被吞掉; 长句 15s 自动暂停
+  //     -> cancel 后让出一个 tick 再播; 播报期间 keepAlive 定时 resume
+  //  ⑤ 微信等内核不支持 Web Speech; iOS 静音开关会屏蔽 speechSynthesis
+  //     -> 1.2s 内未触发 onstart 判定静默失败, 自动切换在线发音兜底
   // ============================================================
+  const TTS = {
+    ok: ('speechSynthesis' in window) && typeof window.SpeechSynthesisUtterance === 'function',
+    voices: [],
+    unlocked: false,
+    broken: false,      // 本地 TTS 已确认不可用 -> 后续直接走在线发音
+    lastError: null,
+    keepAlive: null
+  };
+  const IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+
+  function loadVoices() {
+    if (!TTS.ok) return TTS.voices;
+    try {
+      const vs = window.speechSynthesis.getVoices();
+      if (vs && vs.length) TTS.voices = vs;
+    } catch (e) {}
+    return TTS.voices;
+  }
+
+  // 音色选择: 精确 -> 同主语言(en) -> 系统默认, 避免因缺 en-GB 语音包而静默
+  function pickVoice(pref) {
+    const vs = TTS.voices;
+    if (!vs || !vs.length) return null;
+    const norm = s => String(s || '').toLowerCase().replace(/_/g, '-');
+    const want = norm(pref || 'en-GB');
+    const main = want.split('-')[0];
+    let v = vs.find(x => norm(x.lang) === want);
+    if (!v) {
+      const same = vs.filter(x => norm(x.lang).split('-')[0] === main);
+      if (same.length) v = same.find(x => x.localService) || same.find(x => x.default) || same[0];
+    }
+    if (!v) v = vs.find(x => x.default) || vs[0];
+    return v || null;
+  }
+
+  // iOS / Chrome 音频会话解锁: 必须在用户手势的同步栈内首次调用
+  // 同时解锁 <audio> 元素, 保证游戏内延时播报 (setTimeout 中) 不被 iOS 拦截
+  const SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+  function unlockTTS() {
+    if (!TTS.ok || TTS.unlocked) return;
+    TTS.unlocked = true;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      u.rate = 10;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+    try {
+      const a = new Audio(SILENT_WAV);
+      a.volume = 0;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+    loadVoices();
+    setTimeout(loadVoices, 300);
+    setTimeout(loadVoices, 1200);
+  }
+  ['touchstart', 'mousedown', 'keydown', 'click'].forEach(ev =>
+    document.addEventListener(ev, unlockTTS, { capture: true, passive: true })
+  );
+  loadVoices();
+  if (TTS.ok) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    setTimeout(loadVoices, 300);
+    setTimeout(loadVoices, 1200);
+  }
+
+  function ttsStartKeepAlive() {
+    if (IS_IOS || TTS.keepAlive) return;   // iOS 上 pause/resume 会打断播报, 不启用
+    TTS.keepAlive = setInterval(() => {
+      try {
+        if (!window.speechSynthesis.speaking) { ttsStopKeepAlive(); return; }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      } catch (e) {}
+    }, 9000);
+  }
+  function ttsStopKeepAlive() {
+    if (TTS.keepAlive) { clearInterval(TTS.keepAlive); TTS.keepAlive = null; }
+  }
+
+  function ttsHint(msg, kind) {
+    if (window.AuthUI && typeof window.AuthUI.toast === 'function') {
+      try { window.AuthUI.toast(msg, kind || 'warn'); return; } catch (e) {}
+    }
+    let el = document.getElementById('lv-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'lv-toast';
+      el.className = 'lv-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.className = 'lv-toast show lv-toast-' + (kind || 'warn');
+    clearTimeout(ttsHint._t);
+    ttsHint._t = setTimeout(() => el.classList.remove('show'), 3200);
+  }
+
+  // 在线发音兜底: 本地 TTS 不可用时(微信内核 / 无英文语音包 / iOS 静音开关)启用
+  let _onlineAudio = null;
+  function playOnline(text, slow, silentFail) {
+    if (!text) return false;
+    if (STATE.settings.ttsMode === 'local') return false;
+    try {
+      if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
+      const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
+      const a = new Audio('https://dict.youdao.com/dictvoice?audio=' +
+                          encodeURIComponent(text) + '&type=' + type);
+      a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
+      _onlineAudio = a;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {
+        if (!silentFail) ttsHint('在线发音加载失败,请检查网络或切换发音方式', 'err');
+      });
+      return true;
+    } catch (e) {
+      if (!silentFail) ttsHint('当前环境无法发音,请用系统浏览器打开并关闭静音', 'warn');
+      return false;
+    }
+  }
+
+  function speakWeb(text, slow) {
+    const synth = window.speechSynthesis;
+    try { if (synth.paused) synth.resume(); } catch (e) {}
+    if (synth.speaking || synth.pending) {
+      try { synth.cancel(); } catch (e) {}
+      // cancel 后必须让出一个 tick, 否则 Chrome/Android 会把新语句一起吞掉
+      setTimeout(() => doSpeak(text, slow), 90);
+      return;
+    }
+    doSpeak(text, slow);
+  }
+
+  function doSpeak(text, slow) {
+    const synth = window.speechSynthesis;
+    let u;
+    try { u = new SpeechSynthesisUtterance(text); }
+    catch (e) { playOnline(text, slow); return; }
+    const v = pickVoice(STATE.settings.locale || 'en-GB');
+    if (v) { u.voice = v; u.lang = v.lang; }
+    else { u.lang = STATE.settings.locale || 'en-GB'; }
+    u.rate = slow ? 0.75 : (STATE.settings.rate || 1.0);
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    let started = false;
+    u.onstart = () => { started = true; TTS.broken = false; ttsStartKeepAlive(); };
+    u.onend = () => ttsStopKeepAlive();
+    u.onerror = (ev) => { ttsStopKeepAlive(); TTS.lastError = (ev && ev.error) || 'unknown'; };
+    try { synth.speak(u); }
+    catch (e) { TTS.lastError = String((e && e.message) || e); }
+    clearTimeout(doSpeak._t);
+    doSpeak._t = setTimeout(() => {
+      if (started) return;
+      TTS.broken = true;                       // 本地静默失败, 之后直接走在线发音
+      if (playOnline(text, slow, true)) ttsHint('本地语音不可用,已切换在线发音', 'ok');
+      else ttsHint('发音失败:请关闭手机静音开关、调大音量,或到设置页改发音方式', 'warn');
+    }, 1200);
+  }
+
+  function speakTTS(text, slow) {
+    if (!text) return;
+    const mode = STATE.settings.ttsMode || 'auto';
+    if (mode === 'online' || !TTS.ok || (mode === 'auto' && TTS.broken)) {
+      playOnline(text, slow);
+      return;
+    }
+    loadVoices();
+    unlockTTS();
+    speakWeb(text, slow);
+  }
+
   let _currentAudio = null;
   function speak(text, slow) {
     if (!text) return;
@@ -1079,26 +1295,34 @@ __SYNC_SCRIPTS__
       const audio = new Audio(prePath);
       _currentAudio = audio;
       audio.playbackRate = slow ? 0.85 : STATE.settings.rate || 1.0;
-      audio.play().catch(() => fallbackTTS(text, slow));
+      audio.play().catch(() => speakTTS(text, slow));
       return;
     }
-    fallbackTTS(text, slow);
+    speakTTS(text, slow);
   }
-  function fallbackTTS(text, slow) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = STATE.settings.locale || 'en-GB';
-    u.rate = (slow ? 0.85 : STATE.settings.rate || 1.0);
-    u.pitch = 1.0;
-    const voices = window.speechSynthesis.getVoices();
-    const m = voices.find(v => v.lang.startsWith(u.lang));
-    if (m) u.voice = m;
-    window.speechSynthesis.speak(u);
-  }
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    window.speechSynthesis.getVoices();
+
+  // 发音自检: 输出当前环境的语音能力, 便于定位"没声音"的真实原因
+  function runTTSDiag() {
+    loadVoices();
+    const v = pickVoice(STATE.settings.locale || 'en-GB');
+    const modeText = { auto: '自动', local: '仅本地语音', online: '仅在线音频' }[STATE.settings.ttsMode || 'auto'];
+    const info = [
+      '平台: ' + (IS_IOS ? 'iOS' : (/Android/.test(navigator.userAgent) ? 'Android' : '桌面')),
+      'Web Speech: ' + (TTS.ok ? '支持' : '不支持'),
+      '手势已解锁: ' + (TTS.unlocked ? '是' : '否'),
+      '可用音色: ' + (TTS.voices.length || 0) + ' 个',
+      '当前音色: ' + (v ? v.name + ' (' + v.lang + ')' : '无 → 使用系统默认'),
+      '发音方式: ' + modeText,
+      '最近错误: ' + (TTS.lastError || '无')
+    ].join('\n');
+    speakTTS('Hello, this is a pronunciation test.', false);
+    setTimeout(() => {
+      alert('发音自检\n\n' + info +
+            '\n\n已播放一句测试语音。若仍无声:\n' +
+            '1) 关闭手机侧边静音开关、调大媒体音量\n' +
+            '2) 用 Safari / Chrome 打开(微信内置浏览器不支持发音)\n' +
+            '3) 到设置页把「发音方式」改为「仅在线音频」');
+    }, 400);
   }
 
   // ============================================================
@@ -1801,8 +2025,10 @@ __SYNC_SCRIPTS__
       el.checked = parseFloat(el.value) === (STATE.settings.rate || 1);
     });
     document.getElementById('localeSel').value = STATE.settings.locale || 'en-GB';
+    const modeSel = document.getElementById('ttsModeSel');
+    if (modeSel) modeSel.value = STATE.settings.ttsMode || 'auto';
 
-    const known = Object.values(STATE.progress.card_state).filter(s => s.status === 'known' && !s.was_shadow).length;
+    const known =Object.values(STATE.progress.card_state).filter(s => s.status === 'known' && !s.was_shadow).length;
     const shadow = Object.values(STATE.progress.card_state).filter(s => s.was_shadow).length;
     const newc = Math.max(0, STATE.cards.length - known - shadow);
     document.getElementById('progressStats').innerHTML = `
@@ -1819,8 +2045,15 @@ __SYNC_SCRIPTS__
   }));
   document.getElementById('localeSel').addEventListener('change', (e) => {
     STATE.settings.locale = e.target.value;
+    TTS.broken = false;            // 换了语种, 重新给本地语音一次机会
     saveSettings();
   });
+  document.getElementById('ttsModeSel').addEventListener('change', (e) => {
+    STATE.settings.ttsMode = e.target.value;
+    TTS.broken = false;
+    saveSettings();
+  });
+  document.getElementById('btnTTSTest').addEventListener('click', runTTSDiag);
   document.getElementById('btnResetProgress').addEventListener('click', () => {
     if (confirm('确认清空学习进度? 包括 XP、连续天数、状态标记。词表不会受影响。')) {
       STATE.progress = { card_state: {}, xp: 0, streak: 0, last_active: '' };
