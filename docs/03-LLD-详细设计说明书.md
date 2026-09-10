@@ -33,6 +33,7 @@ const STATE = {
   listenRound: null,           // 听音回合
   memoryRound: null,           // 连连看回合
   gravityRound:null,           // 消消乐回合
+  spellRound:  null,           // 拼写回合
 };
 ```
 
@@ -92,6 +93,10 @@ memoryRound = { tiles, flipped:[], matched:Set, moves, startTime, timer, total }
 // 消消乐
 gravityRound = { queue, cursor, score, life:3, streak, maxStreak,
                  falling, topPos:-40, fallSpeed:0.6, timer, active }
+
+// 拼写
+spellRound = { queue, cursor, current, correct, answered, streak, maxStreak,
+               attempts, wrongRecorded, hintLevel, errAt, startTime, timer }
 ```
 
 ---
@@ -636,10 +641,42 @@ fetch:    导航请求 → 先试网络，失败回退缓存（保证拿最新�
           静态资源 → cache-first（命中即返回，未命中写缓存）
 controllerchange: 新 SW 接管后自动 location.reload() 一次（用户无需手动强刷两次）
 
-CACHE_NAME = 'wordmatch-v16'   // 每次发布必须 +1
+CACHE_NAME = 'wordmatch-v17'   // 每次发布必须 +1
 ```
 
 > **发布纪律**：导航已改 network-first + `controllerchange` 自动刷新，用户通常自动取到新页面；但静态资源仍 cache-first，若发布时不 bump `CACHE_NAME`，已安装用户可能**一直用旧 JS/词库**。故 bump 仍必须。
+
+### 6.10 拼写判定与逐字符校验（v1.1.0）
+
+```
+normalizeSpelling(s):
+  s.replace(/[’‘`´]/g, "'")        // 弯/直撇号归一（同义字符，不算放水）
+   .replace(/[–—−]/g, '-')          // 连字符变体归一
+   .toLowerCase()                    // 仅忽略大小写；空格一律不处理
+  // 注意：不做 trim()、不压缩内部多空格 → 首尾空格 / 连续空格严格判错
+
+firstSpellMismatch(typed, expected) -> int:
+  a = norm(typed); b = norm(expected)
+  for i in 0 .. min(|a|,|b|)-1:
+    if a[i].toLowerCase() != b[i].toLowerCase(): return i     // 首个错位（0 基）
+  return |a| > |b| ? |b| : -1                                 // 多打也算错；正确前缀返回 -1
+
+实时警示（input 事件）:
+  at = firstSpellMismatch(input.value, current.en)
+  if at < 0:            移除 .wrong，清空 #spellWarn，errAt = -1      // 正确前缀不打扰
+  else:
+    if at != errAt:     移除 .wrong → void offsetWidth（强制重排）→ 重新 .wrong（重抖一次）
+                        #spellWarn = "⚠ 第 (at+1) 个字符不正确"（多打则提示"多输了字符"）
+    errAt = at          // 出错位置不变则不重复抖动，避免持续闪烁
+
+提交判定:
+  正确 → recordResult(id,true) + addXP(10) + bumpStreak()，展示 ✓，800ms 守卫后 cursor++
+  错误 → attempts++；仅首次 recordResult(id,false)（wrongRecorded 去重）；attempts>=3 揭示答案
+  跳过 → 不计分、不写 SRS，直接 cursor++
+```
+
+- **题源过滤** `SPELL_EN_OK = /^[A-Za-z][A-Za-z'\- ]*$/`：排除 `pear (Asian)`、`A / B` 等含括号/斜杠的占位短语（严格判定下无法作答）。
+- **移动端**：输入框 `autocorrect/autocapitalize/spellcheck` 全关（防系统改写答案）、`font-size ≥16px`（防 iOS 聚焦缩放）、移动端不自动聚焦；Enter 提交判断 `e.isComposing`。
 
 ---
 

@@ -1,8 +1,8 @@
 # life-vocab-app · 单词碰碰乐
 
-> 面向「生活 + 职场英语词汇」的 **PWA 学习应用**：单文件 `index.html` + 同源 TTS 发音 + SRS 间隔复习 + 6 种游戏 + Supabase 跨设备同步。零构建、可安装到桌面、离线可玩。
+> 面向「生活 + 职场英语词汇」的 **PWA 学习应用**：单文件 `index.html` + 同源 TTS 发音 + SRS 间隔复习 + 7 种游戏 + Supabase 跨设备同步。零构建、可安装到桌面、离线可玩。
 
-**🏷 当前版本：[v1.0.7](./CHANGELOG.md)（2026-09-10）** ·
+**🏷 当前版本：[v1.1.0](./CHANGELOG.md)（2026-09-10）** ·
 线上：https://life-vocab-app.pages.dev ·
 数据：**3230 张卡 / 25 主题 / 2700+ 唯一词条**
 
@@ -35,7 +35,8 @@
 
 | 能力 | 说明 |
 |---|---|
-| **6 种玩法** | Browse 浏览 / Match 碰碰乐 / Listen 听音 / Memory 连连看 / Gravity 消消乐 / 🎙 跟读 |
+| **7 种玩法** | Browse 浏览 / Match 碰碰乐 / Listen 听音 / Memory 连连看 / Gravity 消消乐 / ✍ 拼写 / 🎙 跟读 |
+| **✍ 拼写（听音默写）** | 看中文释义 + 听发音 → 键盘/软键盘打出英文拼写；**逐字符实时警示**（输错立即红框抖动并定位第 N 个字符）、💡提示、大小写不敏感但**空格与非法字符严格**；答对写回 SRS/XP/连击 |
 | **SRS 间隔复习** | 1 / 2 / 4 / 7 / 15 / 30 天间隔重复，错题连对 2 次才移出 shadow pool |
 | **真实发音评分** | 🎙 跟读：MediaRecorder 录音 → Web Speech API 转写 → 词级命中比对 + 编辑距离模糊匹配 → 0-100 分 + 三档自评 |
 | **进度仪表盘** | 9 项 KPI（含「发音均分」）+ 主题掌握度 + SRS 阶梯 + 14 天活跃热力 |
@@ -45,19 +46,19 @@
 
 ---
 
-## 当前进度快照（v1.0.7）
+## 当前进度快照（v1.1.0）
 
 | 维度 | 现状 |
 |---|---|
 | 主题 | **25 个** —— 商务汇报💼 / 学术雅思📚 / 中国菜品🥢 / 运动健康⚽ / 旅行出行✈ / 情绪性格😊 / 金钱金融💰 / 功能表达💬 / 科技数码📱 / 天气环境🌍 / 社会传媒📰 / 短语习语🔗 / 学习教育🎓 / 工业现场🏭 / 职场办公💻，以及生活 11 个（厨房🍳/水果🍎/蔬菜🥬/客厅🛋/出行🚗/购物🛍/健康💊/社交👥/餐饮🍽/家居🏠…）|
 | 词量 | **3230 张 / 2700+ 唯一词条**（原 748 精编 + 2482 扩充）|
 | 发音 | **同源 TTS 代理**（单词有道双口音回退；例句百度主 + Google 备，整句自然朗读）；桌面端优先本地 Web Speech，失败自动转在线 |
-| 玩法 | **6 个**（含 🎙 跟读）|
+| 玩法 | **7 个**（含 ✍ 拼写、🎙 跟读）|
 | 云同步 | Supabase Auth（邮箱）+ 三表 `cards_progress` / `user_settings` / `rec_scores`，IndexedDB→云异步推、离线入队 flush、last-write-wins |
-| PWA | `manifest.webmanifest` + `sw.js`（wordmatch-v16，network-first + 自动刷新）+ 图标（192/512 + maskable）|
+| PWA | `manifest.webmanifest` + `sw.js`（wordmatch-v17，network-first + 自动刷新）+ 图标（192/512 + maskable）|
 | 商务卡 | 12 个 M 模块（M1~M12），来源 `pm-english/cards.md` |
 | SRS | 1/2/4/7/15/30 天间隔，SM-2 风格 |
-| 测试 | 7 套件、243 项断言全绿（见 [测试](#测试) 节）|
+| 测试 | 8 套件、365 项断言全绿（见 [测试](#测试) 节）|
 
 > 完整阶段路线图见文末 [历史路线图](#历史路线图)。
 
@@ -112,7 +113,7 @@ python serve.py 8173
 # 浏览器开 http://localhost:8173
 
 # 4. 发版纪律：每次改代码 / 词库后，务必 bump sw.js 的 CACHE_NAME（否则用户拿不到新页面）
-#    sw.js: const CACHE_NAME = 'wordmatch-v16';  →  'wordmatch-v17'
+#    sw.js: const CACHE_NAME = 'wordmatch-v17';  →  'wordmatch-v18'
 git add -A && git commit -m "..." && git push
 ```
 
@@ -150,7 +151,7 @@ python build_index.py            # 重新构建 index.html + dist/
 ## PWA 与 Service Worker
 
 - **manifest**：`manifest.webmanifest` + 图标（192/512 + maskable），支持「安装到桌面 / 添加到主屏幕」。
-- **sw.js（wordmatch-v16）**：
+- **sw.js（wordmatch-v17）**：
   - 导航请求 **network-first**（在线取最新，离线回退缓存），并注册 `controllerchange` 监听——新 SW 接管后**自动刷新一次**，用户无需手动强刷两次；
   - 静态资源 cache-first。
 - **发版铁律**：改代码 / 词库后必须 bump `CACHE_NAME`，否则旧缓存用户看不到更新。
@@ -159,7 +160,7 @@ python build_index.py            # 重新构建 index.html + dist/
 
 ## 测试
 
-7 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html`，不读源码），**合计 243 项全绿**为发版门槛：
+8 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html`，不读源码），**合计 365 项全绿**为发版门槛：
 
 ```bash
 node test-app.js        # 阶段 1：MVP 与 6 种玩法
@@ -169,6 +170,7 @@ node test-stage3.js     # 阶段 3：游戏逻辑 + SRS
 node test-stage4.js     # 阶段 4：跟读评分
 node test-stage5.js     # 阶段 5：云同步 + PWA
 node test-tts.js        # 移动端发音链路（同源 /tts、双引擎路由、长句不误报、发音自检）
+node test-spell.js      # ✍ 拼写玩法（判定口径 / 逐字符实时警示 / 移动端输入 / 数据预检）
 ```
 
 发布检查清单见 [08-OPS 部署运维手册](./docs/08-OPS-部署运维手册.md)。
@@ -209,7 +211,8 @@ node test-tts.js        # 移动端发音链路（同源 /tts、双引擎路由�
 | 3 | 录音跟读 + PWA + 进度可视化 | ✅ 完成 |
 | 4 | Supabase 云同步（多设备）| ✅ 完成（v1.0.0 归档）|
 | 5 | 手机端发音连续修复（同源代理 / 百度主引擎 / 长句误报修复）| ✅ 完成（v1.0.7）|
+| 6 | 新增「✍ 拼写」玩法（看中文+听音→打字拼写，逐字符实时警示）| ✅ 完成（v1.1.0）|
 
 ---
 
-*文档随应用版本（当前 v1.0.7）维护；功能如有更新以应用内实际界面与 [CHANGELOG](./CHANGELOG.md) 为准。*
+*文档随应用版本（当前 v1.1.0）维护；功能如有更新以应用内实际界面与 [CHANGELOG](./CHANGELOG.md) 为准。*

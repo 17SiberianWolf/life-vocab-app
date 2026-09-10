@@ -1,12 +1,12 @@
 /* ============================================================
  * Word Match · 单词碰碰乐 · Service Worker
- * 策略: 页面 stale-while-revalidate (缓存秒开 + 后台更新) / 静态资源 cache-first
+ * 策略: 导航 network-first (在线取最新, 离线回退缓存) + 静态资源 cache-first
  * 适用于: 本地文件系统 / HTTP 服务器 两种部署
  * 注意: file:// 协议下 SW 不可用, 需通过 HTTP 访问才能离线缓存。
  *       请用 `python -m http.server 8080` 或 run.bat --server 启动。
  * ============================================================ */
 
-const CACHE_NAME = 'wordmatch-v16';
+const CACHE_NAME = 'wordmatch-v17';
 const urlsToCache = [
   './',
   './index.html',

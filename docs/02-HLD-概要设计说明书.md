@@ -115,7 +115,7 @@ graph TB
 
 | 模块 | 载体 | 行数 | 职责 |
 |---|---|---|---|
-| **主应用** | `build_index.py` 内嵌模板 | ~1650 | 状态管理、路由、SRS、5 个游戏、录音评分、统计视图 |
+| **主应用** | `build_index.py` 内嵌模板 | ~1750 | 状态管理、路由、SRS、6 个游戏（含 ✍ 拼写）、录音评分、统计视图 |
 | **LVDB** | `lib/db.js` | 149 | IndexedDB 抽象（5 个 object store），Promise 化 |
 | **Sync** | `lib/sync.js` | 359 | Supabase 客户端、认证、推/拉、离线队列、冲突合并 |
 | **AuthUI** | `lib/auth-ui.js` | 173 | 登录/注册弹窗、顶栏状态徽章、Toast |
@@ -260,7 +260,7 @@ sequenceDiagram
 | 构建命令 | **留空**（不依赖构建环境） |
 | 输出目录 | `dist` |
 | 生产域名 | `https://life-vocab-app.pages.dev` |
-| 缓存策略 | Service Worker 导航 network-first（离线回退缓存）+ 静态资源 cache-first，版本号 `wordmatch-v16` |
+| 缓存策略 | Service Worker 导航 network-first（离线回退缓存）+ 静态资源 cache-first，版本号 `wordmatch-v17` |
 
 **为何构建命令留空**：Cloudflare Pages 的构建环境不保证存在 python3（Vercel 曾因此失败），故把构建产物 `dist/` 直接提交进仓库，部署时零构建。
 
