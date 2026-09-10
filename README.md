@@ -2,6 +2,27 @@
 
 > 面向「CET-6 词汇 + 主题分类 + 配对游戏 + TTS 强化听说」的 Web 学习应用。零构建、双击即用、离线可玩。
 
+**🏷 当前版本：[v1.0.0 稳定版](./docs/13-RELEASE-v1.0.md)（2026-09-10）** ·
+线上：https://life-vocab-app.pages.dev ·
+数据：3230 张卡 / 25 主题
+
+## 📚 文档索引
+
+完整项目资料（16 项）已归档至 **[docs/00-归档总目.md](./docs/00-归档总目.md)**：
+
+| 类别 | 文档 |
+|---|---|
+| **设计与架构** | [01-SRS 需求规格](./docs/01-SRS-需求规格说明书.md) · [02-HLD 概要设计](./docs/02-HLD-概要设计说明书.md) · [03-LLD 详细设计](./docs/03-LLD-详细设计说明书.md) · [10-ADR 架构决策](./docs/10-ADR-架构决策记录.md) |
+| **数据与接口** | [04-DB 数据库设计](./docs/04-DB-数据库设计说明书.md) · [05-API 接口设计](./docs/05-API-接口设计说明书.md) · [openapi.yaml](./docs/openapi.yaml) · [12-数据字典](./docs/12-数据字典-词库规范.md) |
+| **界面** | [06-UIUX 设计规范](./docs/06-UIUX-设计规范.md) |
+| **质量与运维** | [07-TEST 测试文档](./docs/07-TEST-测试文档.md) · [08-OPS 部署运维](./docs/08-OPS-部署运维手册.md) · [11-SECURITY 安全设计](./docs/11-SECURITY-安全设计说明书.md) |
+| **使用与开发** | [09-USER 用户手册](./docs/09-USER-用户手册.md) · [CONTRIBUTING 开发者指南](./CONTRIBUTING.md) · [CHANGELOG 变更日志](./CHANGELOG.md) |
+| **发布与风险** | [13-RELEASE v1.0](./docs/13-RELEASE-v1.0.md) · [14-风险登记册](./docs/14-已知问题与风险登记册.md) |
+
+> **要改代码先看 [CONTRIBUTING.md](./CONTRIBUTING.md)** —— 尤其「不要手改 `index.html`」和「发版必须 bump `sw.js` 版本号」两条。
+
+---
+
 ## 一句话定位
 
 把生活场景词汇按主题整理，单击「碰碰乐」与英文释义配对，每对成功触发发音——练听、练读、练反应。

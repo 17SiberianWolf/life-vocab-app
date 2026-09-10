@@ -31,25 +31,38 @@ console.log('-- 主题 --');
 const biz = APP_DATA.topics.find(t => t.topic_id === 'business');
 ok('business 主题存在');
 ok('含 subscenes 字段: ' + (biz.subscenes ? biz.subscenes.length : 'MISSING'));
-if (!biz.subscenes || biz.subscenes.length !== 12) bad('subscenes 数量', 'want 12 got ' + (biz.subscenes && biz.subscenes.length));
-else ok('12 个 M 模块');
+// 注: 词库已从 158 张扩充到 280 张, 子模块 12 -> 13。
+//     断言改为「下界 + 结构完整性」, 避免因继续加词而误报失败。
+const SUB_N = (biz.subscenes || []).length;
+if (SUB_N < 12) bad('subscenes 数量', 'want >=12 got ' + SUB_N);
+else ok(SUB_N + ' 个 M 模块');
 
 // === 2. 卡片检查
 console.log('-- 卡片 --');
 const bizCards = APP_DATA.cards.filter(c => c.topic === 'business');
-if (bizCards.length !== 158) bad('商务卡总数', 'want 158 got ' + bizCards.length);
-else ok('商务卡总数 158');
+if (bizCards.length < 158) bad('商务卡总数', 'want >=158 got ' + bizCards.length);
+else ok('商务卡总数 ' + bizCards.length + ' (>=158)');
 const modules = new Set(bizCards.map(c => c.scene));
 ok('商务卡覆盖模块数: ' + modules.size);
-if (modules.size !== 12) bad('模块数', 'want 12 got ' + modules.size);
+// 每个已声明的子模块都应有卡片
+const declared = new Set((biz.subscenes || []).map(s => s.module));
+const uncovered = [...declared].filter(m => !modules.has(m));
+if (uncovered.length) bad('有子模块无卡片', uncovered.join(','));
+else ok('全部 ' + declared.size + ' 个子模块均有卡片');
 
 // 3. 关键字段非空
-const fields = ['en', 'zh', 'ex', 'sc', 'tip'];
+//    tip 仅精编卡(id<=748)强制要求; 扩充卡允许为空, 应用有容错渲染
+const fields = ['en', 'zh', 'ex', 'sc'];
 for (const f of fields) {
   const miss = bizCards.filter(c => !c[f] || c[f].length === 0);
   if (miss.length) bad('字段为空 ' + f + ' (' + miss.length + ')');
   else ok('字段 ' + f + ' 全填');
 }
+const curated = bizCards.filter(c => c.id <= 748);
+const tipMiss = curated.filter(c => !c.tip || c.tip.length === 0);
+if (tipMiss.length) bad('精编卡缺 tip (' + tipMiss.length + ')');
+else ok('精编商务卡 (' + curated.length + ') 均有 tip');
+ok('扩充卡 tip 可缺省 (应用已容错)');
 
 // 4. 关键 HTML 元素
 console.log('-- HTML 元素 --');

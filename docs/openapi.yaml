@@ -1,0 +1,475 @@
+openapi: 3.0.3
+
+info:
+  title: life-vocab-app · Supabase API
+  version: "1.0.0"
+  description: |
+    life-vocab-app v1.0 使用的云端接口契约。
+
+    服务端由 Supabase 托管提供：
+    - `/auth/v1/*` — GoTrue 认证服务
+    - `/rest/v1/*` — PostgREST（自动映射 Postgres 表）
+
+    **安全模型**：前端仅持有可公开的 anon/publishable key，
+    用户数据隔离由 Postgres Row Level Security (RLS) 在数据库层强制，
+    不依赖密钥保密。
+
+    前端不直接手写 HTTP 请求，全部通过 supabase-js SDK 调用；
+    本契约描述其底层 HTTP 语义，供联调、Mock 与契约测试使用。
+  contact:
+    name: life-vocab-app
+    url: https://github.com/17SiberianWolf/life-vocab-app
+
+servers:
+  - url: https://sbtvdsxyvkyunydpngyb.supabase.co
+    description: Supabase 生产项目
+  - url: http://localhost:54321
+    description: Supabase 本地开发（supabase start）
+
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+    description: 用户认证（GoTrue）
+  - name: Progress
+    description: 卡片学习进度
+  - name: Settings
+    description: 用户设置与全局状态
+  - name: Scores
+    description: 跟读录音评分历史
+
+paths:
+  /auth/v1/signup:
+    post:
+      tags: [Auth]
+      summary: 邮箱密码注册
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: learner@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+      responses:
+        "200":
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          description: 邮箱已注册或密码强度不足
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/v1/token:
+    post:
+      tags: [Auth]
+      summary: 登录获取令牌
+      security:
+        - apiKey: []
+      parameters:
+        - name: grant_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [password, refresh_token]
+            example: password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /auth/v1/user:
+    get:
+      tags: [Auth]
+      summary: 获取当前用户信息
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/v1/logout:
+    post:
+      tags: [Auth]
+      summary: 登出
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 已登出
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /rest/v1/cards_progress:
+    get:
+      tags: [Progress]
+      summary: 查询学习进度（RLS 自动限制为当前用户）
+      parameters:
+        - $ref: "#/components/parameters/UserIdEq"
+        - name: select
+          in: query
+          schema:
+            type: string
+            default: "*"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CardsProgress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Progress]
+      summary: 批量 upsert 学习进度（按 user_id+card_id+mode 冲突合并）
+      parameters:
+        - $ref: "#/components/parameters/PreferUpsert"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 100
+              items:
+                $ref: "#/components/schemas/CardsProgressInput"
+      responses:
+        "201":
+          description: 写入成功
+        "409":
+          description: 唯一约束冲突
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /rest/v1/user_settings:
+    get:
+      tags: [Settings]
+      summary: 查询用户设置（最多一条）
+      parameters:
+        - $ref: "#/components/parameters/UserIdEq"
+      responses:
+        "200":
+          description: 成功；无记录时返回空数组
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSettings"
+    post:
+      tags: [Settings]
+      summary: upsert 用户设置
+      parameters:
+        - $ref: "#/components/parameters/PreferUpsert"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSettingsInput"
+      responses:
+        "201":
+          description: 写入成功
+
+  /rest/v1/rec_scores:
+    get:
+      tags: [Scores]
+      summary: 查询跟读评分历史
+      parameters:
+        - $ref: "#/components/parameters/UserIdEq"
+        - name: order
+          in: query
+          schema:
+            type: string
+            default: created_at.desc
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecScore"
+    post:
+      tags: [Scores]
+      summary: 新增一条评分记录（只增不改）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecScoreInput"
+      responses:
+        "201":
+          description: 创建成功
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase anon / publishable key（可公开）
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 登录后获得的 access_token
+
+  parameters:
+    UserIdEq:
+      name: user_id
+      in: query
+      required: true
+      description: |
+        PostgREST 过滤语法 `eq.{uid}`。
+        即便不传，RLS 也会限制只返回当前用户的行。
+      schema:
+        type: string
+        example: eq.3f2a1b4c-0000-4000-8000-abcdef123456
+    PreferUpsert:
+      name: Prefer
+      in: header
+      required: true
+      schema:
+        type: string
+        default: resolution=merge-duplicates,return=minimal
+
+  responses:
+    BadRequest:
+      description: 请求语法错误
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: JWT 无效/过期，或 RLS 拒绝
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: string
+        hint:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+
+    Session:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          example: 3600
+        refresh_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    CardsProgress:
+      type: object
+      required: [user_id, card_id, mode]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        card_id:
+          type: integer
+        mode:
+          type: string
+          enum: [match, listen, memory, gravity, record, browse, self-rate]
+        reps:
+          type: integer
+          default: 0
+          description: 连续答对次数
+        correct:
+          type: integer
+          default: 0
+        ease:
+          type: number
+          format: float
+          default: 2.5
+          description: SM-2 难度因子（预留）
+        last_review:
+          type: string
+          format: date-time
+          nullable: true
+        next_due:
+          type: string
+          format: date-time
+          nullable: true
+        shadow_pool:
+          type: boolean
+          default: false
+          description: 是否在错题池
+        rec_score:
+          type: number
+          nullable: true
+          description: 最近一次跟读评分 0-100
+        rec_attempts:
+          type: integer
+          default: 0
+        updated_at:
+          type: string
+          format: date-time
+          description: 由数据库触发器维护，是 last-write-wins 冲突判据
+
+    CardsProgressInput:
+      allOf:
+        - $ref: "#/components/schemas/CardsProgress"
+        - type: object
+          required: [user_id, card_id, mode]
+
+    UserSettings:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        xp:
+          type: integer
+          default: 0
+        streak:
+          type: integer
+          default: 0
+        last_active_date:
+          type: string
+          format: date
+          nullable: true
+        shadow_pool_meta:
+          type: object
+          additionalProperties: true
+          default: {}
+        settings:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: 'UI 偏好，如 {"locale":"en-GB","rate":1.0,"daily_new":10}'
+        updated_at:
+          type: string
+          format: date-time
+
+    UserSettingsInput:
+      allOf:
+        - $ref: "#/components/schemas/UserSettings"
+        - type: object
+          required: [user_id]
+
+    RecScore:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: string
+          format: uuid
+        card_id:
+          type: integer
+        mode:
+          type: string
+          enum: [word, example]
+        score:
+          type: number
+          description: 0-100
+        transcript:
+          type: string
+          nullable: true
+          description: 浏览器语音识别转写全文
+        raw:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: '逐词命中矩阵，如 {"tgt":[...],"got":[...],"perWord":[...]}'
+        created_at:
+          type: string
+          format: date-time
+
+    RecScoreInput:
+      allOf:
+        - $ref: "#/components/schemas/RecScore"
+        - type: object
+          required: [user_id, card_id, mode, score]
