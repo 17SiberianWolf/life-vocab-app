@@ -56,9 +56,16 @@ function makeEnv(opts) {
     }
     play() {
       this.played = true; calls.online++;
-      // 成功后异步触发 ended 让逐词链式播放推进; 失败则触发 error
-      const ev = this._err ? 'error' : 'ended';
-      setTimeout(() => this._emit(ev), 0);
+      if (opts.emitStalled) {
+        // 模拟长句缓冲: 先 stalled(无数据), 稍后才真正播完
+        setTimeout(() => this._emit('stalled'), 0);
+        setTimeout(() => this._emit('playing'), 10);
+        setTimeout(() => this._emit('ended'), 40);
+      } else {
+        // 成功后异步触发 ended 让逐词链式播放推进; 失败则触发 error
+        const ev = this._err ? 'error' : 'ended';
+        setTimeout(() => this._emit(ev), 0);
+      }
       return Promise.resolve();
     }
     pause() {}
@@ -286,6 +293,17 @@ function makeEnv(opts) {
     await sleep(150);
     ok('整句在线失败 -> 退化逐词保底出声, 不卡死', env.realAudios().length >= 1);
     ok('退化路径每词仍走同源 /tts 代理', env.realAudios().every(a => a.src.indexOf('/tts?audio=') >= 0));
+  }
+
+  section('12. 长句缓冲期不误报失败 (stalled 不再触发逐词回退)');
+  {
+    const env = makeEnv({ withoutSynth: true, emitStalled: true });
+    env.api.speakTTS('Although it was raining heavily, she still decided to walk to the office.', false);
+    await sleep(120);
+    ok('例句仅一次整句请求 (未误触发逐词)', env.realAudios().length === 1, 'audios=' + env.realAudios().length);
+    ok('缓冲期 stalled 不再误提示"整句在线发音失败"',
+       env.hints.filter(h => String(h.msg).indexOf('整句在线发音失败') >= 0).length === 0,
+       JSON.stringify(env.hints));
   }
 
   console.log('\n=== 通过 ' + pass + ' 项, 失败 ' + fail + ' 项 ===');

@@ -1215,7 +1215,8 @@ __SYNC_SCRIPTS__
   // v1.0.3 起改为同源代理 /tts (Cloudflare Pages Function 转发发音接口),
   // 彻底绕开手机运营商对 dict.youdao.com / translate.google.com 等外部域名的封锁。
   // 在线发音: 走同源 /tts 代理(手机只与本站点通信, 由 CF 边缘取音频)
-  // 单词 -> 有道 dictvoice(快、覆盖好); 句子 -> Google 整句自然合成(带语调, 不逐词拆读)。
+  // 单词 -> 有道 dictvoice(快、覆盖好); 句子 -> 百度翻译 TTS 整句合成(国内免密钥),
+  // Google 翻译 TTS 作备份。客户端整句一次请求, 不逐词拆读。
   let _onlineAudio = null;
   let _onlineQueue = [];
   let _onlinePlaying = false;
@@ -1261,12 +1262,17 @@ __SYNC_SCRIPTS__
     if (epoch !== _onlineEpoch) return;
     const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
     const a = new Audio('/tts?audio=' + encodeURIComponent(text) + '&type=' + type);
+    try { a.preload = 'auto'; } catch (e) {}
     a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
     _onlineAudio = a;
     _onlinePlaying = true;
-    let done = false;
+    let settled = false, started = false, watchdog = null;
+    const disarm = () => { if (watchdog) { clearTimeout(watchdog); watchdog = null; } };
+    const ok = () => { if (settled) return; settled = true; disarm(); if (_onlineAudio === a) _onlineAudio = null; _onlinePlaying = false; };
     const fail = () => {
-      if (done) return; done = true;
+      if (settled) return;
+      if (started) { ok(); return; }   // 已经出声 = 成功, 长句缓冲期不误判
+      settled = true; disarm();
       if (_onlineAudio === a) _onlineAudio = null;
       _onlinePlaying = false;
       if (epoch !== _onlineEpoch) return;
@@ -1280,14 +1286,20 @@ __SYNC_SCRIPTS__
         try { loadVoices(); unlockTTS(); speakWeb(text, slow); } catch (e) {}
       }
     };
-    const ok = () => { if (done) return; done = true; if (_onlineAudio === a) _onlineAudio = null; _onlinePlaying = false; };
+    // 有数据可播 / 已开始播放 -> 视为健康, 解除看门狗 (避免长句缓冲期误报失败)
+    const markStarted = () => { started = true; disarm(); };
+    const arm = () => { disarm(); watchdog = setTimeout(fail, 15000); };
     a.addEventListener('ended', ok);
     a.addEventListener('error', fail);
-    a.addEventListener('stalled', fail);
+    a.addEventListener('playing', markStarted);
+    a.addEventListener('loadeddata', markStarted);
+    a.addEventListener('canplay', markStarted);
+    a.addEventListener('timeupdate', markStarted);
+    a.addEventListener('progress', () => { if (!started) arm(); });   // 仍在下载也算健康
     const p = a.play();
     if (p && p.catch) p.catch(fail);
-    // 兜底: 既不 ended 也不 error 时强制收尾, 避免永久卡住
-    setTimeout(() => { if (!done) fail(); }, 9000);
+    // 看门狗: 仅在"始终未出声且无数据推进"时才判定失败 (15s, 随数据推进重置)
+    arm();
   }
 
   function _playOnlineNext(slow, silentFail, epoch) {
