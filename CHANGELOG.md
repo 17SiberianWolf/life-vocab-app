@@ -5,6 +5,28 @@
 
 ---
 
+## [1.0.2] — 2026-09-10 · 修复手机端"打不开"（外部 CDN 阻塞）
+
+### 修复
+
+**现象**：手机端（微信 / 小米 / 夸克）打不开页面，电脑端正常。
+
+**根因**：页面唯一的外部依赖是 jsdelivr 的 Supabase SDK，且是**同步 `<script>`**。
+国内手机网络下 jsdelivr 域名常被 DNS 污染 / 连接挂起，同步脚本会阻塞整个页面渲染，
+表现为"手机打不开、电脑能打开"（电脑网络可达 jsdelivr）。
+
+**处理**：
+
+- 下载 supabase-js UMD 到 `vendor/supabase.js`，构建时复制到 `dist/`，页面改为
+  **同源** `<script src="supabase.js">` 加载，彻底消除跨域阻塞点
+- `sw.js` 加固（缓存版本 `v10 → v11`）：
+  - 预缓存从 `cache.addAll`（整包失败即 SW 装不上）改为逐项 `add` 并容错
+  - navigate 请求改为 **stale-while-revalidate**（缓存秒开 + 后台更新）
+  - 修复网络失败时 `respondWith(undefined)` 导致白屏的隐患
+  - 静态资源缓存正则补上 `.js`
+
+---
+
 ## [1.0.1] — 2026-09-10 · 移动端发音修复
 
 ### 修复
