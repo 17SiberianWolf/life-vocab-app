@@ -1212,10 +1212,10 @@ __SYNC_SCRIPTS__
   }
 
   // 在线发音兜底: 本地 TTS 不可用时(微信内核 / 无英文语音包 / iOS 静音开关)启用
-  // v1.0.3 起改为同源代理 /tts (Cloudflare Pages Function 转发有道接口),
-  // 彻底绕开手机运营商对 dict.youdao.com 等外部域名的封锁。
-  // 在线发音: 走同源 /tts 代理(手机只与本站点通信, 由 CF 边缘取有道音频)
-  // 有道 dictvoice 仅支持单词, 整句会 500; 故长文本按词拆分, 逐词顺序播放。
+  // v1.0.3 起改为同源代理 /tts (Cloudflare Pages Function 转发发音接口),
+  // 彻底绕开手机运营商对 dict.youdao.com / translate.google.com 等外部域名的封锁。
+  // 在线发音: 走同源 /tts 代理(手机只与本站点通信, 由 CF 边缘取音频)
+  // 单词 -> 有道 dictvoice(快、覆盖好); 句子 -> Google 整句自然合成(带语调, 不逐词拆读)。
   let _onlineAudio = null;
   let _onlineQueue = [];
   let _onlinePlaying = false;
@@ -1242,12 +1242,52 @@ __SYNC_SCRIPTS__
     if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
     _onlinePlaying = false;
     _onlineEpoch++;
+    // 句子(含空格或较长) -> 整句自然朗读, 一次请求合成, 不逐词拆分
+    if (/\s/.test(text) || text.length > 40) {
+      _playOnlineSentence(text, slow, silentFail, _onlineEpoch);
+      return true;
+    }
     const chunks = splitTts(text);
     if (!chunks.length) return false;
     _onlineQueue = chunks;
     _onlineSingle = (chunks.length === 1);
     _playOnlineNext(slow, silentFail, _onlineEpoch);
     return true;
+  }
+
+  // 整句在线发音: 一次性请求 /tts 合成整句(Google 自然语调), 不逐词拆读。
+  // 仅当整句请求失败时, 才退化为逐词拆分(保底出声, 而非默认生硬读法)。
+  function _playOnlineSentence(text, slow, silentFail, epoch) {
+    if (epoch !== _onlineEpoch) return;
+    const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
+    const a = new Audio('/tts?audio=' + encodeURIComponent(text) + '&type=' + type);
+    a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
+    _onlineAudio = a;
+    _onlinePlaying = true;
+    let done = false;
+    const fail = () => {
+      if (done) return; done = true;
+      if (_onlineAudio === a) _onlineAudio = null;
+      _onlinePlaying = false;
+      if (epoch !== _onlineEpoch) return;
+      // 整句在线失败: 退化逐词(尽量出声), 仍失败再试本地语音
+      if (!silentFail) ttsHint('整句在线发音失败, 尝试逐词播放', 'warn');
+      const chunks = splitTts(text);
+      if (chunks.length) {
+        _onlineQueue = chunks; _onlineSingle = (chunks.length === 1);
+        _playOnlineNext(slow, true, epoch);
+      } else if (TTS.ok) {
+        try { loadVoices(); unlockTTS(); speakWeb(text, slow); } catch (e) {}
+      }
+    };
+    const ok = () => { if (done) return; done = true; if (_onlineAudio === a) _onlineAudio = null; _onlinePlaying = false; };
+    a.addEventListener('ended', ok);
+    a.addEventListener('error', fail);
+    a.addEventListener('stalled', fail);
+    const p = a.play();
+    if (p && p.catch) p.catch(fail);
+    // 兜底: 既不 ended 也不 error 时强制收尾, 避免永久卡住
+    setTimeout(() => { if (!done) fail(); }, 9000);
   }
 
   function _playOnlineNext(slow, silentFail, epoch) {

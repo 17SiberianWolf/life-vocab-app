@@ -252,41 +252,40 @@ function makeEnv(opts) {
     ok('空文本不触发任何播放', env.calls.speak === 0 && env.realAudios().length === 0);
   }
 
-  section('10. 例句按词拆分顺序播放 (修复有道整句 500)');
+  section('10. 例句整句自然朗读 (不再逐词拆读)');
   {
     const env = makeEnv({ withoutSynth: true });
     env.api.speakTTS('Please hand me the knife.', false);
-    ok('首词立即出声', env.realAudios().length >= 1, 'audios=' + env.realAudios().length);
-    ok('首词为 Please', env.realAudios()[0] && env.realAudios()[0].src.indexOf('audio=Please') >= 0, env.realAudios()[0] && env.realAudios()[0].src);
-    await sleep(80);   // 让逐词链式播放推进
-    ok('整句被拆成多个词并逐个播放', env.realAudios().length >= 4, 'audios=' + env.realAudios().length);
-    ok('末词去标点 -> knife', env.realAudios().slice(-1)[0] && env.realAudios().slice(-1)[0].src.indexOf('audio=knife') >= 0, env.realAudios().slice(-1)[0] && env.realAudios().slice(-1)[0].src);
-    ok('每个词都走同源 /tts 代理', env.realAudios().every(a => a.src.indexOf('/tts?audio=') >= 0));
+    ok('例句只发一次 /tts 请求(整句合成)', env.realAudios().length === 1, 'audios=' + env.realAudios().length);
+    const src = env.realAudios()[0] && env.realAudios()[0].src;
+    ok('URL 含整句原文(带空格, 未拆分)', src && src.indexOf('audio=Please%20hand%20me%20the%20knife.') >= 0, src);
+    ok('整句也走同源 /tts 代理', src && src.indexOf('/tts?audio=') >= 0);
+    ok('整句不逐词(无多个 audio 请求)', env.realAudios().length === 1);
   }
   {
     const env = makeEnv({ withoutSynth: true });
     env.api.speakTTS("I can't find my wallet.", false);
-    await sleep(80);
-    ok('含撇号单词保留 (I/can\'t/...) 不丢词', env.realAudios().length >= 4, 'audios=' + env.realAudios().length);
-    ok('can\'t 未被拆坏', env.realAudios().some(a => a.src.indexOf('audio=can') >= 0));
+    const src = env.realAudios()[0] && env.realAudios()[0].src;
+    ok('含撇号句子整句合成(不丢词)', env.realAudios().length === 1 && src && src.indexOf("audio=I%20can't%20find%20my%20wallet.") >= 0, src);
   }
 
-  section('11. 单 token 在线失败不卡死 + 可恢复');
+  section('11. 整句在线失败退化为逐词, 不卡死 + 可恢复');
   {
     const env = makeEnv({ withoutSynth: true, onlineError: true, settings: { ttsMode: 'online' } });
     env.api.speakTTS('computer', false);   // 单 token 失败
     await sleep(80);
-    ok('失败后链式已推进 (创建过 audio)', env.realAudios().length >= 1);
-    // 再发一句, 验证失败后链路仍可继续播放(说明 advance 已执行、未卡死)
+    ok('单 token 失败后已推进', env.realAudios().length >= 1);
+    // 再发一句, 验证失败后链路仍可继续播放(说明未卡死)
     env.api.speakTTS('hello world', false);
     await sleep(80);
-    ok('失败后可继续播放新文本 (不卡死)', env.realAudios().length >= 3, 'audios=' + env.realAudios().length);
+    ok('失败后可继续播放新文本 (不卡死)', env.realAudios().length >= 2, 'audios=' + env.realAudios().length);
   }
   {
     const env = makeEnv({ withoutSynth: true, onlineError: true });
     env.api.speakTTS('This sentence will partly fail.', false);
-    await sleep(120);
-    ok('整句失败也走完所有 token 不卡死', env.realAudios().length >= 1);
+    await sleep(150);
+    ok('整句在线失败 -> 退化逐词保底出声, 不卡死', env.realAudios().length >= 1);
+    ok('退化路径每词仍走同源 /tts 代理', env.realAudios().every(a => a.src.indexOf('/tts?audio=') >= 0));
   }
 
   console.log('\n=== 通过 ' + pass + ' 项, 失败 ' + fail + ' 项 ===');
