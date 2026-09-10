@@ -50,10 +50,17 @@ function makeEnv(opts) {
   class AudioEl {
     constructor(src) {
       this.src = src; this.playbackRate = 1; this.played = false;
+      this._listeners = {};
       audios.push(this);
     }
     play() { this.played = true; calls.online++; return Promise.resolve(); }
     pause() {}
+    addEventListener(type, fn) { (this._listeners[type] = this._listeners[type] || []).push(fn); }
+    removeEventListener(type, fn) {
+      if (this._listeners[type]) this._listeners[type] = this._listeners[type].filter(f => f !== fn);
+    }
+    // 测试辅助: 模拟加载失败触发 error 事件
+    _emit(type) { (this._listeners[type] || []).forEach(fn => fn({ type })); }
   }
 
   const synth = {
@@ -117,7 +124,7 @@ function makeEnv(opts) {
     ok('TTS.ok 判定为不可用', env.api.TTS.ok === false);
     env.api.speakTTS('hello', false);
     ok('直接调用在线发音', env.realAudios().length === 1, 'audios=' + env.realAudios().length);
-    ok('在线 URL 指向有道词典发音', env.realAudios()[0] && env.realAudios()[0].src.indexOf('dictvoice') >= 0,
+    ok('在线 URL 走同源 /tts 代理 (绕开运营商封锁)', env.realAudios()[0] && env.realAudios()[0].src.indexOf('/tts?audio=') >= 0,
        env.realAudios()[0] && env.realAudios()[0].src);
   }
 

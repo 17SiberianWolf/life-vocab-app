@@ -1119,6 +1119,7 @@ __SYNC_SCRIPTS__
   };
   const IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent) ||
                  (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+  const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) || IS_IOS;
 
   function loadVoices() {
     if (!TTS.ok) return TTS.voices;
@@ -1209,6 +1210,8 @@ __SYNC_SCRIPTS__
   }
 
   // 在线发音兜底: 本地 TTS 不可用时(微信内核 / 无英文语音包 / iOS 静音开关)启用
+  // v1.0.3 起改为同源代理 /tts (Cloudflare Pages Function 转发有道接口),
+  // 彻底绕开手机运营商对 dict.youdao.com 等外部域名的封锁。
   let _onlineAudio = null;
   function playOnline(text, slow, silentFail) {
     if (!text) return false;
@@ -1216,14 +1219,20 @@ __SYNC_SCRIPTS__
     try {
       if (_onlineAudio) { try { _onlineAudio.pause(); } catch (e) {} _onlineAudio = null; }
       const type = (STATE.settings.locale === 'en-US') ? 2 : 1;   // 1=英式 2=美式
-      const a = new Audio('https://dict.youdao.com/dictvoice?audio=' +
-                          encodeURIComponent(text) + '&type=' + type);
+      // 同源代理: 手机只与本站点通信, 由 CF 边缘取有道音频
+      const a = new Audio('/tts?audio=' + encodeURIComponent(text) + '&type=' + type);
       a.playbackRate = slow ? 0.85 : (STATE.settings.rate || 1.0);
       _onlineAudio = a;
-      const p = a.play();
-      if (p && p.catch) p.catch(() => {
+      let failed = false;
+      const onErr = () => {
+        if (failed) return; failed = true;
         if (!silentFail) ttsHint('在线发音加载失败,请检查网络或切换发音方式', 'err');
-      });
+      };
+      // iOS Safari 加载失败时不 reject play() 的 promise, 只触发 error 事件 -> 必须监听
+      a.addEventListener('error', onErr);
+      a.addEventListener('stalled', onErr);
+      const p = a.play();
+      if (p && p.catch) p.catch(onErr);
       return true;
     } catch (e) {
       if (!silentFail) ttsHint('当前环境无法发音,请用系统浏览器打开并关闭静音', 'warn');
@@ -1272,7 +1281,9 @@ __SYNC_SCRIPTS__
   function speakTTS(text, slow) {
     if (!text) return;
     const mode = STATE.settings.ttsMode || 'auto';
-    if (mode === 'online' || !TTS.ok || (mode === 'auto' && TTS.broken)) {
+    // 移动端本地 Web Speech 普遍不可靠(国行缺语音包 / 微信不支持 / iOS 静音开关),
+    // auto 模式下直接走同源代理, 保证首词即出声、零等待; 桌面端仍优先本地 TTS。
+    if (mode === 'online' || !TTS.ok || (mode === 'auto' && (TTS.broken || IS_MOBILE))) {
       playOnline(text, slow);
       return;
     }
@@ -2844,7 +2855,17 @@ def build(data_dir: str, out_path: str, config_path: str = None) -> None:
             _fp = os.path.join(_icons_src, _f)
             if os.path.isfile(_fp):
                 shutil.copy2(_fp, os.path.join(dist_dir, "icons", _f))
-    print(f"[OK] 部署目录 dist/ 已就绪 (index.html + manifest + sw.js + icons)")
+    # Pages Function (同源 TTS 代理): 同时放到 dist/functions, 兼容 Cloudflare 在
+    # 仓库根或 output 目录两种查找方式, 保证函数一定被部署
+    _fn_src = os.path.join(HERE, "functions")
+    if os.path.isdir(_fn_src):
+        _fn_dst = os.path.join(dist_dir, "functions")
+        os.makedirs(_fn_dst, exist_ok=True)
+        for _f in os.listdir(_fn_src):
+            _fp = os.path.join(_fn_src, _f)
+            if os.path.isfile(_fp) and _f.endswith(".js"):
+                shutil.copy2(_fp, os.path.join(_fn_dst, _f))
+    print(f"[OK] 部署目录 dist/ 已就绪 (index.html + manifest + sw.js + icons + functions)")
 
 
 def main():
