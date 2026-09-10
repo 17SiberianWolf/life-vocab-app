@@ -2726,13 +2726,25 @@ def _build_sync_block(cfg, env):
     auth_js    = _read("auth-ui.js")
     install_js = _read("install-prompt.js")
 
-    # Supabase SDK CDN (仅在启用且有 URL 时)
+    # Supabase SDK (仅在启用且有 URL 时)
+    # 本地化优先: vendor/supabase.js 随构建复制到 dist/, 同源加载。
+    # 原先用 jsdelivr CDN 同步 <script>, 国内手机网络下 DNS 污染/连接挂起会
+    # 直接阻塞整个页面渲染 (表现为"手机打不开、电脑能打开")。
     sdk_tag = ""
     if url and key:
-        sdk_tag = (
-            '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">'
-            '</script>'
-        )
+        vendor = os.path.join(HERE, "vendor", "supabase.js")
+        if os.path.exists(vendor):
+            sdk_tag = (
+                '<script src="supabase.js" '
+                'onerror="console.warn(\'[PWA] 本地 supabase.js 加载失败,降级本地模式\')">'
+                '</script>'
+            )
+        else:
+            # 无本地 SDK 时才回退 CDN, 且改为 async, 避免阻塞首屏
+            sdk_tag = (
+                '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async '
+                'onerror="console.warn(\'[PWA] Supabase SDK 加载失败,降级本地模式\')"></script>'
+            )
 
     # 注入到前端 window.SupabaseCfg
     cfg_json = json.dumps({
@@ -2817,6 +2829,11 @@ def build(data_dir: str, out_path: str, config_path: str = None) -> None:
     shutil.rmtree(dist_dir, ignore_errors=True)
     os.makedirs(os.path.join(dist_dir, "icons"), exist_ok=True)
     shutil.copy2(out_path, os.path.join(dist_dir, "index.html"))
+    # Supabase SDK 本地副本: 同源加载, 不再依赖 jsdelivr CDN
+    _vendor = os.path.join(HERE, "vendor", "supabase.js")
+    if os.path.exists(_vendor):
+        shutil.copy2(_vendor, os.path.join(dist_dir, "supabase.js"))
+        shutil.copy2(_vendor, os.path.join(HERE, "supabase.js"))  # 本地预览同源可用
     for _name in ("manifest.webmanifest", "sw.js"):
         _src = os.path.join(HERE, _name)
         if os.path.exists(_src):
