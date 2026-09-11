@@ -66,8 +66,8 @@ python build_index.py
 
 ```bash
 # sw.js
-- const CACHE_NAME = 'wordmatch-v17';
-+ const CACHE_NAME = 'wordmatch-v18';
+- const CACHE_NAME = 'wordmatch-v18';
++ const CACHE_NAME = 'wordmatch-v19';
 ```
 
 > **原因**：静态资源仍走 cache-first；不 bump 版本号，用户浏览器**永远加载旧 JS/词库**，你会收到"我这边还是老样子"的反馈。（导航请求已改 network-first + `controllerchange` 自动刷新，但静态资源仍需 bump。）
@@ -82,10 +82,11 @@ node test-stage4.js     # 阶段4功能
 node test-stage5.js     # 云同步/PWA
 node test-business.js   # 商务主题专项
 node test-app.js        # 主应用 JS 语法与结构
-node test-tts.js        # 移动端发音链路（同源 /tts、双引擎、长句不误报）
+node test-tts.js        # 移动端发音链路（同源 /tts、引擎路由回退、长句不误报）
+node test-spell.js      # ✍ 拼写玩法（双模式 / 判定 / 逐字符警示）
 ```
 
-全部输出 `OK` 且无 `FAIL` 才可提交（8 套件合计 377 项全绿）。
+全部输出 `OK` 且无 `FAIL` 才可提交（8 套件合计 410 项全绿）。
 
 ---
 

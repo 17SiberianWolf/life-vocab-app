@@ -51,6 +51,14 @@ const struct = [
   ['顶栏入口 data-go="spell"',        /data-go="spell"/],
   ['主题卡入口 data-action="spell"',  /data-action="spell"/],
   ['题源正则 SPELL_EN_OK',            /const SPELL_EN_OK = \/\^\[A-Za-z\]/],
+  ['模式切换条 #spellModeBar',        /id="spellModeBar"/],
+  ['简单模式按钮 data-spell-mode',   /data-spell-mode="simple"/],
+  ['地狱模式按钮 data-spell-mode',   /data-spell-mode="hell"/],
+  ['原词显示容器 #spellAnswer',      /id="spellAnswer"/],
+  ['提示文案容器 #spellHintLabel',    /id="spellHintLabel"/],
+  ['STATE.spellMode 字段',           /spellMode:\s*'simple'/],
+  ['setSpellMode 函数',              /function setSpellMode\b/],
+  ['applySpellModeUI 函数',          /function applySpellModeUI\b/],
 ];
 for (const [n, re] of struct) ok(n, re.test(html));
 
@@ -86,6 +94,9 @@ const dataWiring = [
   ['自动播报 speak(',               /speak\(cur\.en, false\)/],
   ['慢速发音 speak(..., true)',     /speak\(r\.current\.en, true\)/],
   ['回合身份守卫',                  /STATE\.spellRound !== r/],
+  ['地狱模式才写 SRS(true) 分支',   /if \(STATE\.spellMode === 'hell'\)[\s\S]*?recordResult\(r\.current\.id, true\)/],
+  ['地狱模式才写 SRS(false) 分支',  /STATE\.spellMode === 'hell' && !r\.wrongRecorded/],
+  ['简单模式读 localStorage 初始化', /STATE\.spellMode = localStorage\.getItem\('lva_spell_mode'\)/],
 ];
 for (const [n, re] of dataWiring) ok(n, re.test(html));
 
@@ -160,13 +171,13 @@ section('5. 逐字符实时警示行为');
   const listeners = {};
   const els = {};
   function makeEl(id) {
-    const e = { id, value: '', disabled: false, textContent: '', innerHTML: '', offsetWidth: 100, _cls: new Set(),
+    const e = { id, value: '', disabled: false, textContent: '', innerHTML: '', offsetWidth: 100, style: {}, _cls: new Set(),
       addEventListener(t, fn) { (listeners[id] = listeners[id] || {})[t] = fn; }, focus() {}, blur() {} };
     e.classList = { add: (...c) => c.forEach(x => e._cls.add(x)), remove: (...c) => c.forEach(x => e._cls.delete(x)), contains: (c) => e._cls.has(c) };
     return e;
   }
   ids.forEach(id => { els[id] = makeEl(id); });
-  const documentMock = { getElementById: (id) => els[id] || (els[id] = makeEl(id)) };
+  const documentMock = { getElementById: (id) => els[id] || (els[id] = makeEl(id)), querySelectorAll: () => [] };
 
   const moduleSrc = html.slice(html.indexOf('function normalizeSpelling('), html.indexOf('// Memory 连连看'));
   const stateRef = { spellRound: { current: { en: 'start' }, errAt: -1 } };
@@ -228,18 +239,18 @@ section('5.2 完整回合流程');
   const ids = ['spellRestart', 'spellPlay', 'spellPlaySlow', 'spellSubmit', 'spellHint', 'spellSkip', 'spellInput', 'spellZh', 'spellReveal', 'spellWarn', 'spellAnswered', 'spellCorrect', 'spellStreak', 'spellTimer', 'spellTitle'];
   const listeners = {}, els = {};
   function makeEl(id) {
-    const e = { id, value: '', disabled: false, textContent: '', innerHTML: '', offsetWidth: 100, _cls: new Set(),
+    const e = { id, value: '', disabled: false, textContent: '', innerHTML: '', offsetWidth: 100, style: {}, _cls: new Set(),
       addEventListener(t, fn) { (listeners[id] = listeners[id] || {})[t] = fn; }, focus() {}, blur() {} };
     e.classList = { add: (...c) => c.forEach(x => e._cls.add(x)), remove: (...c) => c.forEach(x => e._cls.delete(x)), contains: (c) => e._cls.has(c) };
     return e;
   }
   ids.forEach(id => { els[id] = makeEl(id); });
-  const documentMock = { getElementById: (id) => els[id] || (els[id] = makeEl(id)) };
+  const documentMock = { getElementById: (id) => els[id] || (els[id] = makeEl(id)), querySelectorAll: () => [] };
 
   const timers = [];
   const flush = () => { let guard = 0; while (timers.length && guard++ < 100) timers.shift()(); };
 
-  const STATE = { spellRound: null, cards: goodPool, topics: [], currentTopic: null, progress: {} };
+  const STATE = { spellRound: null, cards: goodPool, topics: [], currentTopic: null, progress: {}, spellMode: 'hell' };
   const calls = { speak: 0, recTrue: [], recFalse: [], xp: 0, streak: 0 };
   const moduleSrc = html.slice(html.indexOf('function normalizeSpelling('), html.indexOf('// Memory 连连看'));
 
@@ -348,6 +359,97 @@ if (!appData || !Array.isArray(appData.cards)) {
   const maxLen = Math.max(...pool.map(c => (c.en || '').length));
   ok('最长 en <= 45 字符', maxLen <= 45, 'max=' + maxLen);
 }
+
+// ------------------------------------------------------------
+// 7. 双模式（简单 / 地狱）
+// ------------------------------------------------------------
+section('7. 双模式（简单 / 地狱）');
+(function dualMode() {
+  const cardPool = (getAppData(html) || {}).cards || [];
+  const goodPool = cardPool.filter(c => /^[A-Za-z][A-Za-z'\- ]*$/.test(c.en || ''));
+  if (goodPool.length < 10) { ok('双模式: 拼写题库充足(>=10)', false, 'pool=' + goodPool.length); return; }
+
+  const ids = ['spellRestart','spellPlay','spellPlaySlow','spellSubmit','spellHint','spellSkip','spellInput','spellZh','spellReveal','spellWarn','spellAnswered','spellCorrect','spellStreak','spellTimer','spellTitle','spellAnswer','spellHintLabel'];
+  const listeners = {}, els = {};
+  function makeEl(id) {
+    const e = { id, value:'', disabled:false, textContent:'', innerHTML:'', offsetWidth:100, style:{}, _cls:new Set(),
+      addEventListener(t,fn){ (listeners[id]=listeners[id]||{})[t]=fn; }, focus(){}, blur(){} };
+    e.classList = { add:(...c)=>c.forEach(x=>e._cls.add(x)), remove:(...c)=>c.forEach(x=>e._cls.delete(x)), contains:(c)=>e._cls.has(c) };
+    return e;
+  }
+  ids.forEach(id => { els[id] = makeEl(id); });
+  function makeBtn(mode) {
+    const b = { dataset:{ spellMode: mode }, _cls:new Set(),
+      addEventListener(t,fn){ (listeners['mode-'+mode]=listeners['mode-'+mode]||{})[t]=fn; }, focus(){}, blur(){} };
+    b.classList = { add:(...c)=>c.forEach(x=>b._cls.add(x)), remove:(...c)=>c.forEach(x=>b._cls.delete(x)), contains:(c)=>b._cls.has(c),
+      toggle:(c,on)=>{ if(on) b._cls.add(c); else b._cls.delete(c); } };
+    return b;
+  }
+  const btnSimple = makeBtn('simple'), btnHell = makeBtn('hell');
+  const documentMock = {
+    getElementById: (id) => els[id] || (els[id] = makeEl(id)),
+    querySelectorAll: (sel) => sel === '.spell-mode-btn' ? [btnSimple, btnHell] : []
+  };
+  const localStorageMock = (() => { let s={}; return { getItem:(k)=>s[k]||null, setItem:(k,v)=>{ s[k]=String(v); } }; })();
+
+  const timers = []; const flush = () => { let g=0; while(timers.length && g++<100) timers.shift()(); };
+  const STATE = { spellRound:null, cards:goodPool, topics:[], currentTopic:null, progress:{}, spellMode:'simple' };
+  const calls = { recTrue:[], recFalse:[], xp:0, streak:0 };
+  const moduleSrc = html.slice(html.indexOf('function normalizeSpelling('), html.indexOf('// Memory 连连看'));
+
+  let api;
+  try {
+    api = new Function('STATE','speak','recordResult','addXP','bumpStreak','shuffle','escapeHtml','IS_MOBILE','show','alert','document','localStorage','performance','setInterval','clearInterval','setTimeout',
+      moduleSrc + '\n;return { startSpellRound, submitSpell, setSpellMode, applySpellModeUI };'
+    )(
+      STATE, () => {}, (id,okv)=>{ (okv?calls.recTrue:calls.recFalse).push(id); }, (n)=>{ calls.xp+=n; }, () => { calls.streak++; },
+      (a)=>a, (x)=>String(x), false, () => {}, () => {}, documentMock, localStorageMock, { now:()=>0 }, () => 0, () => {}, (fn)=>{ timers.push(fn); return timers.length; }
+    );
+  } catch (e) { ok('双模式: 沙箱加载模块', false, e.message); return; }
+  ok('双模式: 沙箱加载模块', true);
+
+  // —— 默认 simple ——
+  ok("默认 spellMode='simple'", STATE.spellMode === 'simple');
+  api.startSpellRound(); flush();
+  ok('simple: 显示原词 #spellAnswer', els.spellAnswer.textContent === STATE.spellRound.current.en, els.spellAnswer.textContent);
+  ok('simple: 隐藏提示按钮', els.spellHint.style.display === 'none');
+  ok('simple: 提示文案为"对照下方"', /对照下方/.test(els.spellHintLabel.textContent), els.spellHintLabel.textContent);
+  ok('simple: 切换条高亮 simple', btnSimple._cls.has('active') && !btnHell._cls.has('active'));
+
+  // —— simple 答对 -> 不写学习数据, 仅会话统计 ——
+  els.spellInput.value = STATE.spellRound.current.en;
+  api.submitSpell();
+  ok('simple 答对: 不写 SRS(true)', calls.recTrue.length === 0, 'recTrue=' + calls.recTrue.length);
+  ok('simple 答对: 不加 XP', calls.xp === 0);
+  ok('simple 答对: 不 bump 全局连击', calls.streak === 0);
+  ok('simple 答对: 本批会话统计仍更新', STATE.spellRound.correct === 1 && STATE.spellRound.answered === 1 && STATE.spellRound.streak === 1);
+  flush();
+
+  // —— 切到 hell ——
+  api.setSpellMode('hell');
+  ok("切换后 spellMode='hell'", STATE.spellMode === 'hell');
+  ok('切换持久化 localStorage', localStorageMock.getItem('lva_spell_mode') === 'hell');
+  ok('hell: 隐藏原词', els.spellAnswer.style.display === 'none');
+  ok('hell: 显示提示按钮', els.spellHint.style.display !== 'none');
+  ok('hell: 提示文案为"根据中文释义"', /根据中文释义/.test(els.spellHintLabel.textContent), els.spellHintLabel.textContent);
+  ok('hell: 切换条高亮 hell', btnHell._cls.has('active') && !btnSimple._cls.has('active'));
+  ok('切换不重启回合(进度保留)', STATE.spellRound && STATE.spellRound.cursor >= 1);
+
+  // —— hell 答对 -> 写学习数据 ——
+  els.spellInput.value = STATE.spellRound.current.en;
+  api.submitSpell();
+  ok('hell 答对: 写 SRS(true)', calls.recTrue.length === 1, 'recTrue=' + calls.recTrue.length);
+  ok('hell 答对: 加 XP(10)', calls.xp === 10);
+  ok('hell 答对: bump 全局连击', calls.streak === 1);
+
+  // —— 点击按钮切回 simple ——
+  const clickSimple = listeners['mode-simple'] && listeners['mode-simple'].click;
+  if (typeof clickSimple === 'function') {
+    clickSimple();
+    ok("点击按钮切回 simple", STATE.spellMode === 'simple');
+    ok('切回 simple: localStorage 同步', localStorageMock.getItem('lva_spell_mode') === 'simple');
+  } else { ok('模式按钮 click 监听已绑定', false); }
+})();
 
 // ------------------------------------------------------------
 console.log('\n========================================');

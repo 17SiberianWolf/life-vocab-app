@@ -353,6 +353,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .spell-input.correct { border-color: var(--good); }
   .spell-input.wrong { border-color: var(--warn); animation: spell-shake .3s; }
   @keyframes spell-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  /* 模式切换条(简单/地狱) */
+  .spell-mode-bar { display: flex; gap: 8px; justify-content: center; margin: 10px 0 4px; }
+  .spell-mode-btn { flex: 1; max-width: 220px; padding: 10px; border: 2px solid var(--border);
+    border-radius: var(--radius); background: var(--bg-card); color: var(--text-soft);
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .spell-mode-btn.active { border-color: var(--accent); color: #fff; background: var(--accent); }
+  /* 简单模式: 显示单词/词组原貌 */
+  .spell-answer { font-size: 32px; font-weight: 800; letter-spacing: 1px; color: var(--accent-strong);
+    margin-bottom: 10px; line-height: 1.3; word-break: break-word; }
 
   @media (max-width: 600px) {
     .match-board, .listen-board { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -368,6 +377,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     .spell-zh { font-size: 22px; }
     .spell-input { font-size: 16px; min-height: 44px; min-width: 140px; }
     .spell-input-row .navbtn, .spell-input-row .pill { min-height: 44px; }
+    /* 模式切换按钮: 触控 ≥44px; 原词显示字号下调防溢出 */
+    .spell-mode-btn { font-size: 13px; min-height: 44px; }
+    .spell-answer { font-size: 26px; }
   }
 
   /* ===== 阶段 5 · 同步 / 登录 / PWA 安装 ===== */
@@ -578,8 +590,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <button class="navbtn" data-go="topics">← 主题</button>
       <h2 id="spellTitle">Spell 拼写</h2>
     </div>
+    <div class="spell-mode-bar" id="spellModeBar">
+      <button class="spell-mode-btn active" data-spell-mode="simple">✍ 简单（抄写）</button>
+      <button class="spell-mode-btn" data-spell-mode="hell">🔥 地狱（默写）</button>
+    </div>
     <div class="spell-stage">
-      <div class="spell-hint-label">根据中文释义与发音，拼出英文</div>
+      <div class="spell-hint-label" id="spellHintLabel">对照下方单词/词组，手动抄写一遍，熟悉拼写与手感</div>
+      <div class="spell-answer" id="spellAnswer"></div>
       <div class="spell-zh" id="spellZh">—</div>
       <div class="spell-audio">
         <button class="play-btn" id="spellPlay">🔊</button>
@@ -812,6 +829,7 @@ __SYNC_SCRIPTS__
     memoryRound: null,
     gravityRound: null,
     spellRound: null,
+    spellMode: 'simple',   // 'simple' 看词抄写(纯练习) | 'hell' 看中文默写(写SRS); 进入时由 localStorage 初始化
   };
 
   // ============================================================
@@ -1912,6 +1930,7 @@ __SYNC_SCRIPTS__
 
   function renderSpell(topicId) {
     STATE.currentTopic = topicId || null;
+    try { STATE.spellMode = localStorage.getItem('lva_spell_mode') || 'simple'; } catch (e) { STATE.spellMode = 'simple'; }
     const topic = STATE.topics.find(t => t.topic_id === topicId);
     document.getElementById('spellTitle').innerHTML = topic
       ? `${escapeHtml(topic.name_zh || '')} <span style="color:var(--text-muted);font-weight:400;font-size:13px;">Spell</span>`
@@ -1965,6 +1984,7 @@ __SYNC_SCRIPTS__
     document.getElementById('spellAnswered').textContent = r.answered;
     document.getElementById('spellCorrect').textContent = r.correct;
     document.getElementById('spellStreak').textContent = r.streak;
+    applySpellModeUI();   // 按当前模式显示原词/显隐提示按钮
     // 自动播报一次(进入本题是点击手势, 移动端可正常出声)
     setTimeout(() => { if (STATE.spellRound === r) speak(cur.en, false); }, 150);
     // 桌面端自动聚焦便于连续打字; 移动端不聚焦(避免软键盘遮挡发音区)
@@ -1985,8 +2005,10 @@ __SYNC_SCRIPTS__
       warn.textContent = '';
       r.correct++; r.answered++;
       r.streak++; if (r.streak > r.maxStreak) r.maxStreak = r.streak;
-      recordResult(r.current.id, true);
-      addXP(10); bumpStreak();
+      if (STATE.spellMode === 'hell') {        // 仅地狱模式写学习数据; 简单模式为纯练习
+        recordResult(r.current.id, true);
+        addXP(10); bumpStreak();
+      }
       document.getElementById('spellAnswered').textContent = r.answered;
       document.getElementById('spellCorrect').textContent = r.correct;
       document.getElementById('spellStreak').textContent = r.streak;
@@ -2001,7 +2023,9 @@ __SYNC_SCRIPTS__
     } else {
       r.attempts++;
       r.streak = 0;
-      if (!r.wrongRecorded) { recordResult(r.current.id, false); r.wrongRecorded = true; }
+      if (STATE.spellMode === 'hell' && !r.wrongRecorded) {
+        recordResult(r.current.id, false); r.wrongRecorded = true;   // 简单模式永不写 SRS
+      }
       input.classList.remove('wrong'); void input.offsetWidth; input.classList.add('wrong');
       const at = firstSpellMismatch(val, r.current.en);
       if (at === -1) warn.textContent = '✗ 还没输完，继续输入';
@@ -2067,6 +2091,30 @@ __SYNC_SCRIPTS__
     input.value = ''; input.disabled = true; input.classList.remove('wrong', 'correct');
     STATE.spellRound = null;               // 结束, 释放守卫
   }
+  // 按当前模式刷新 UI(显示原词/显隐提示按钮/切换条高亮); 不高重启回合, 实时生效
+  function applySpellModeUI() {
+    const r = STATE.spellRound;
+    const simple = STATE.spellMode === 'simple';
+    const label = document.getElementById('spellHintLabel');
+    if (label) label.textContent = simple
+      ? '对照下方单词/词组，手动抄写一遍，熟悉拼写与手感'
+      : '根据中文释义与发音，拼出英文';
+    const ans = document.getElementById('spellAnswer');
+    if (ans) {
+      if (simple && r && r.current) { ans.textContent = r.current.en || ''; ans.style.display = ''; }
+      else { ans.textContent = ''; ans.style.display = 'none'; }
+    }
+    const hintBtn = document.getElementById('spellHint');
+    if (hintBtn) hintBtn.style.display = simple ? 'none' : '';
+    document.querySelectorAll('.spell-mode-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.spellMode === STATE.spellMode));
+  }
+  function setSpellMode(mode) {
+    if (mode !== 'simple' && mode !== 'hell') return;
+    STATE.spellMode = mode;
+    try { localStorage.setItem('lva_spell_mode', mode); } catch (e) {}
+    applySpellModeUI();
+  }
   document.getElementById('spellRestart').addEventListener('click', startSpellRound);
   document.getElementById('spellPlay').addEventListener('click', () => {
     const r = STATE.spellRound;
@@ -2104,6 +2152,8 @@ __SYNC_SCRIPTS__
   document.getElementById('spellInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submitSpell(); }
   });
+  document.querySelectorAll('.spell-mode-btn').forEach(b =>
+    b.addEventListener('click', () => setSpellMode(b.dataset.spellMode)));
 
   // ============================================================
   // Memory 连连看

@@ -260,7 +260,7 @@ sequenceDiagram
 | 构建命令 | **留空**（不依赖构建环境） |
 | 输出目录 | `dist` |
 | 生产域名 | `https://life-vocab-app.pages.dev` |
-| 缓存策略 | Service Worker 导航 network-first（离线回退缓存）+ 静态资源 cache-first，版本号 `wordmatch-v17` |
+| 缓存策略 | Service Worker 导航 network-first（离线回退缓存）+ 静态资源 cache-first，版本号 `wordmatch-v18` |
 
 **为何构建命令留空**：Cloudflare Pages 的构建环境不保证存在 python3（Vercel 曾因此失败），故把构建产物 `dist/` 直接提交进仓库，部署时零构建。
 

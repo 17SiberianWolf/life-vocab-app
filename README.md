@@ -2,7 +2,7 @@
 
 > 面向「生活 + 职场英语词汇」的 **PWA 学习应用**：单文件 `index.html` + 同源 TTS 发音 + SRS 间隔复习 + 7 种游戏 + Supabase 跨设备同步。零构建、可安装到桌面、离线可玩。
 
-**🏷 当前版本：[v1.1.1](./CHANGELOG.md)（2026-09-10）** ·
+**🏷 当前版本：[v1.1.2](./CHANGELOG.md)（2026-09-11）** ·
 线上：https://life-vocab-app.pages.dev ·
 数据：**3230 张卡 / 25 主题 / 2700+ 唯一词条**
 
@@ -36,7 +36,7 @@
 | 能力 | 说明 |
 |---|---|
 | **7 种玩法** | Browse 浏览 / Match 碰碰乐 / Listen 听音 / Memory 连连看 / Gravity 消消乐 / ✍ 拼写 / 🎙 跟读 |
-| **✍ 拼写（听音默写）** | 看中文释义 + 听发音 → 键盘/软键盘打出英文拼写；**逐字符实时警示**（输错立即红框抖动并定位第 N 个字符）、💡提示、大小写不敏感但**空格与非法字符严格**；答对写回 SRS/XP/连击 |
+| **✍ 拼写（双模式）** | **简单**：看单词/词组原貌 + 中文释义 + 发音，照抄练手感（纯练习不计分）；**地狱**：只看中文释义 + 听音默写（写回 SRS/XP/错题本）。两模式共用**严格判定**（仅忽略大小写，空格与非法字符严格）与**逐字符实时警示**（输错立即红框抖动并定位第 N 个字符）|
 | **SRS 间隔复习** | 1 / 2 / 4 / 7 / 15 / 30 天间隔重复，错题连对 2 次才移出 shadow pool |
 | **真实发音评分** | 🎙 跟读：MediaRecorder 录音 → Web Speech API 转写 → 词级命中比对 + 编辑距离模糊匹配 → 0-100 分 + 三档自评 |
 | **进度仪表盘** | 9 项 KPI（含「发音均分」）+ 主题掌握度 + SRS 阶梯 + 14 天活跃热力 |
@@ -46,7 +46,7 @@
 
 ---
 
-## 当前进度快照（v1.1.1）
+## 当前进度快照（v1.1.2）
 
 | 维度 | 现状 |
 |---|---|
@@ -55,10 +55,10 @@
 | 发音 | **同源 TTS 代理**（单词有道双口音，有道无此词条时回退百度/Google；例句百度主 + Google 备，整句自然朗读）；桌面端优先本地 Web Speech，失败自动转在线 |
 | 玩法 | **7 个**（含 ✍ 拼写、🎙 跟读）|
 | 云同步 | Supabase Auth（邮箱）+ 三表 `cards_progress` / `user_settings` / `rec_scores`，IndexedDB→云异步推、离线入队 flush、last-write-wins |
-| PWA | `manifest.webmanifest` + `sw.js`（wordmatch-v17，network-first + 自动刷新）+ 图标（192/512 + maskable）|
+| PWA | `manifest.webmanifest` + `sw.js`（wordmatch-v18，network-first + 自动刷新）+ 图标（192/512 + maskable）|
 | 商务卡 | 12 个 M 模块（M1~M12），来源 `pm-english/cards.md` |
 | SRS | 1/2/4/7/15/30 天间隔，SM-2 风格 |
-| 测试 | 8 套件、377 项断言全绿（见 [测试](#测试) 节）|
+| 测试 | 8 套件、410 项断言全绿（见 [测试](#测试) 节）|
 
 > 完整阶段路线图见文末 [历史路线图](#历史路线图)。
 
@@ -78,6 +78,22 @@
 - **设置项**：「发音方式」`自动 / 仅本地语音 / 仅在线音频`；「🔊 发音自检」可一键诊断环境并试听。
 - **Edge TTS 调研结论**：Microsoft Edge TTS 免费且音质最佳，但其握手依赖 `Sec-*` 保留头，而 Cloudflare Worker/Pages Function 运行时禁止客户端设置该类头 → 不可行，已放弃。
 - **离线高清音频（可选）**：早期用 `edge-tts` 生成 mp3（`audio.embed=true` 时嵌入），当前默认 `audio.embed=false` 走在线代理，零 404、无需上传音频。
+
+---
+
+## ✍ 拼写玩法（双模式）
+
+第 7 种玩法，同一视图顶部即可随时切换两种难度：
+
+| 模式 | 你看到的内容 | 目标 | 学习数据 |
+|---|---|---|---|
+| **✍ 简单（抄写）** | 单词 / 词组**原貌** + 中文释义 + 发音 | 照着敲一遍，熟悉拼写、练手感 | **纯练习不计分**（仅记本批会话统计：已答/正确/连击/用时，不写 SRS、不进错题本、不加 XP）|
+| **🔥 地狱（默写）** | **仅中文释义** + 发音 | 凭听音与释义推理并默写 | 答对写 SRS + XP + 连击；答错记入错题本 |
+
+- 两种模式共用同一套**严格判定**（仅忽略大小写；**空格与非法字符严格**；只归一撇号/连字符的编码变体）与**逐字符实时警示**（输错立即红框抖动并提示「第 N 个字符不正确」，改对自动恢复）。
+- 简单模式下自动隐藏「💡 提示」按钮（答案本就可见）；切换模式即时生效、不打断当前回合。
+- 模式持久化于 `localStorage('lva_spell_mode')`，**默认简单模式**——先练手感，熟练后再切地狱模式默写。
+- 入口：顶栏「✍ 拼写」（全库出题）· 主题卡「✍ 拼写」（按主题出题）。
 
 ---
 
@@ -113,7 +129,7 @@ python serve.py 8173
 # 浏览器开 http://localhost:8173
 
 # 4. 发版纪律：每次改代码 / 词库后，务必 bump sw.js 的 CACHE_NAME（否则用户拿不到新页面）
-#    sw.js: const CACHE_NAME = 'wordmatch-v17';  →  'wordmatch-v18'
+#    sw.js: const CACHE_NAME = 'wordmatch-v18';  →  'wordmatch-v19'
 git add -A && git commit -m "..." && git push
 ```
 
@@ -151,7 +167,7 @@ python build_index.py            # 重新构建 index.html + dist/
 ## PWA 与 Service Worker
 
 - **manifest**：`manifest.webmanifest` + 图标（192/512 + maskable），支持「安装到桌面 / 添加到主屏幕」。
-- **sw.js（wordmatch-v17）**：
+- **sw.js（wordmatch-v18）**：
   - 导航请求 **network-first**（在线取最新，离线回退缓存），并注册 `controllerchange` 监听——新 SW 接管后**自动刷新一次**，用户无需手动强刷两次；
   - 静态资源 cache-first。
 - **发版铁律**：改代码 / 词库后必须 bump `CACHE_NAME`，否则旧缓存用户看不到更新。
@@ -160,17 +176,17 @@ python build_index.py            # 重新构建 index.html + dist/
 
 ## 测试
 
-8 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html` 与 `functions/tts.js`），**合计 377 项全绿**为发版门槛：
+8 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html` 与 `functions/tts.js`），**合计 410 项全绿**为发版门槛：
 
 ```bash
-node test-app.js        # 阶段 1：MVP 与 6 种玩法
+node test-app.js        # 阶段 1：MVP 与 5 个游戏视图（match/listen/memory/gravity/record）
 node test-business.js   # 商务卡集成
 node test-stage2.js     # 阶段 2：主题/词库数据
 node test-stage3.js     # 阶段 3：游戏逻辑 + SRS
 node test-stage4.js     # 阶段 4：跟读评分
 node test-stage5.js     # 阶段 5：云同步 + PWA
 node test-tts.js        # 发音链路（同源 /tts 代理引擎路由：单词有道→百度→Google 回退、长句不误报、发音自检）
-node test-spell.js      # ✍ 拼写玩法（判定口径 / 逐字符实时警示 / 移动端输入 / 数据预检）
+node test-spell.js      # ✍ 拼写玩法（双模式切换 / 判定口径 / 逐字符实时警示 / 移动端输入 / 数据预检）
 ```
 
 发布检查清单见 [08-OPS 部署运维手册](./docs/08-OPS-部署运维手册.md)。
@@ -212,11 +228,7 @@ node test-spell.js      # ✍ 拼写玩法（判定口径 / 逐字符实时警�
 | 4 | Supabase 云同步（多设备）| ✅ 完成（v1.0.0 归档）|
 | 5 | 手机端发音连续修复（同源代理 / 百度主引擎 / 长句误报修复）| ✅ 完成（v1.0.7）|
 | 6 | 新增「✍ 拼写」玩法（看中文+听音→打字拼写，逐字符实时警示）| ✅ 完成（v1.1.0）|
-
----
-
 | 7 | 修复个别单词在线发音失败（`/tts` 单词分支补引擎回退）| ✅ 完成（v1.1.1）|
+| 8 | 「✍ 拼写」新增**简单模式**（看原词抄写）与**地狱模式**（看中文默写），支持切换 | ✅ 完成（v1.1.2）|
 
----
-
-*文档随应用版本（当前 v1.1.1）维护；功能如有更新以应用内实际界面与 [CHANGELOG](./CHANGELOG.md) 为准。*
+*文档随应用版本（当前 v1.1.2）维护；功能如有更新以应用内实际界面与 [CHANGELOG](./CHANGELOG.md) 为准。*
