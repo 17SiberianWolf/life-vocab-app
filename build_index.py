@@ -177,9 +177,35 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     0% { transform: translateX(0); } 25% { transform: translateX(-6px); }
     50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } 100% { transform: translateX(0); }
   }
-  .match-card small, .listen-option small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
-  /* 碰碰乐卡内「主文本 + 提示」纵向堆叠, 避免移动端被 flex 横排挤成"乱码"(D) */
-  .match-card { flex-direction: column; word-break: break-word; line-height: 1.25; }
+  .listen-option small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
+
+  /* ===== 碰碰乐 v2 · Duolingo 式单词配对 ===== */
+  /* 等大紧凑瓷砖网格: 桌面 4 列, 移动 3 列(见媒体查询) */
+  .match-board { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .match-card {
+    flex-direction: column; word-break: break-word; line-height: 1.25;
+    border: 2px solid var(--border); border-bottom-width: 4px; border-radius: 16px;
+    min-height: 72px; padding: 8px 10px; font-size: 15px; font-weight: 700;
+  }
+  .match-card small { display: none; }
+  .match-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+  .match-card.selected { background: #e0f2fe; border-color: #7dd3fc; border-bottom-color: #38bdf8; color: var(--accent-strong); }
+  .match-card.wrong { background: #fee2e2; border-color: #fca5a5; border-bottom-color: #f87171; color: #b91c1c; animation: shake .35s; }
+  /* 配对成功: 变绿 → 淡出(用 transition 而非 animation, 避免整体重绘时重复触发闪绿) */
+  .match-card.matched {
+    background: #d1fae5; border-color: transparent; border-bottom-color: transparent;
+    color: transparent; opacity: .06; transform: scale(.9); pointer-events: none;
+    transition: transform .35s ease, background .35s ease, border-color .35s ease, color .35s ease, opacity .35s ease;
+  }
+  /* 顶部细进度条(已配对 / 总组数) */
+  .match-progress { height: 8px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; margin: 4px 0 12px; }
+  .match-progress-fill { height: 100%; width: 0%; background: var(--good); border-radius: 999px; transition: width .3s ease; }
+  /* 完成横幅(替代 alert 弹窗) */
+  .match-done { margin-top: 14px; padding: 16px; border-radius: 16px; text-align: center;
+    background: #d1fae5; border: 2px solid #6ee7b7; color: #047857; }
+  .match-done .md-title { font-size: 18px; font-weight: 800; }
+  .match-done .md-sub { font-size: 13px; font-weight: 400; color: var(--text-soft); margin: 6px 0 12px; }
+  .match-done .md-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
   /* Listen 中心发音区 */
   .listen-stage {
@@ -222,6 +248,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     font-size: 14px; color: var(--text-soft); flex-wrap: wrap;
   }
   .game-stats b { color: var(--text); }
+
+  /* 所有游戏视图统一居中窄栏: 避免桌面端继承 main 的 960px 被拉伸成"宽横条" */
+  #view-match, #view-listen, #view-memory, #view-gravity, #view-spell, #view-record {
+    max-width: 640px; margin-left: auto; margin-right: auto;
+  }
 
   /* 设置面板 */
   .panel {
@@ -366,20 +397,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     margin-bottom: 10px; line-height: 1.3; word-break: break-word; }
 
   @media (max-width: 600px) {
-    /* A: 碰碰乐移动端 2 列 → 3 列, 10 组词(20 张)降至 7 行, 一屏可见 */
-    .match-board { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    /* 碰碰乐移动端: 3 列, 6 组(12 张) = 4 行, 紧凑瓷砖 */
+    .match-board { grid-template-columns: repeat(3, 1fr); gap: 7px; }
     .listen-board { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .memory-board { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    /* B: 卡片紧凑化(高度/内边距/字号下调) */
-    .match-card { padding: 7px 5px; min-height: 52px; font-size: 12px; }
-    .listen-option { padding: 10px 8px; min-height: 56px; font-size: 14px; }
-    /* D: 移动端隐藏冗余 "tap to match" 提示(选中变蓝 / 配对变绿已给反馈) */
+    .match-card { padding: 8px 6px; min-height: 56px; font-size: 13px; border-bottom-width: 3px; }
     .match-card small { display: none; }
-    /* C: 顶部功能区瘦身 + 吸顶(统计收成一行小字, 贴着全局顶栏下方吸附) */
+    .listen-option { padding: 10px 8px; min-height: 56px; font-size: 14px; }
+    /* 顶部功能区瘦身 + 吸顶(统计收成一行小字, 贴着全局顶栏下方吸附) */
     .match-head { position: sticky; top: var(--lv-topbar, 96px); z-index: 20;
       background: var(--bg); padding: 4px 0 6px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
     .game-stats { gap: 10px; font-size: 12px; padding: 4px 0; }
-    #view-match > p { display: none; }
     main { padding: 12px; }
     header.top { padding: 8px 12px; }
     .word-card { padding: 12px; }
@@ -536,7 +564,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <h2 id="matchTitle">Match 碰碰乐</h2>
       </div>
       <div class="game-stats">
-        <div>本轮词数:<b id="matchRoundSize">8</b></div>
+        <div>本轮:<b id="matchRoundSize">6</b> 组</div>
         <div>用时:<b id="matchTimer">0.0s</b></div>
         <div>错误:<b id="matchErrors">0</b></div>
         <div>得分:<b id="matchScore">0</b></div>
@@ -544,10 +572,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <button class="navbtn" id="matchSpeakEn">🔊 听词</button>
       </div>
     </div>
+    <div class="match-progress"><div class="match-progress-fill" id="matchProgress"></div></div>
     <div class="match-board" id="matchBoard"></div>
-    <p style="margin-top:14px; font-size:13px; color: var(--text-soft);">
-      点英文卡后点中文释义。配对成功触发听力;答错会自动加入错题本。
-    </p>
+    <div class="match-done" id="matchDone" style="display:none;"></div>
   </section>
 
   <section id="view-listen" class="view">
@@ -1680,7 +1707,7 @@ __SYNC_SCRIPTS__
 
   function startRound() {
     const all = STATE.cards.filter(c => c.topic === STATE.currentTopic);
-    const n = Math.min(10, all.length);
+    const n = Math.min(6, all.length); // 6 组 = 12 张瓷砖 (贴近 Duolingo 配对节奏)
     const picked = shuffle(all).slice(0, n);
     const en = picked.map(c => ({ key: c.id, side: 'en', text: c.en, card: c }));
     const zh = picked.map(c => ({ key: c.id, side: 'zh', text: c.zh, card: c }));
@@ -1692,13 +1719,22 @@ __SYNC_SCRIPTS__
       startTime: performance.now(),
       timer: null,
       selected: null,
+      wrongIdx: null,
       matched: new Set(),
     };
     document.getElementById('matchRoundSize').textContent = n;
     document.getElementById('matchErrors').textContent = '0';
     document.getElementById('matchScore').textContent = '0';
+    const done = document.getElementById('matchDone');
+    if (done) { done.style.display = 'none'; done.innerHTML = ''; }
     paintMatchBoard();
     startMatchTimer();
+  }
+  function updateMatchProgress() {
+    const r = STATE.matchRound;
+    const el = document.getElementById('matchProgress');
+    if (!el || !r || !r.cards.length) return;
+    el.style.width = (r.matched.size / r.cards.length * 100) + '%';
   }
   function startMatchTimer() {
     if (STATE.matchRound.timer) clearInterval(STATE.matchRound.timer);
@@ -1720,12 +1756,12 @@ __SYNC_SCRIPTS__
       div.className = 'match-card';
       if (r.matched.has(cell.key)) div.classList.add('matched');
       if (r.selected && r.selected.idx === idx) div.classList.add('selected');
+      if (r.wrongIdx && r.wrongIdx.includes(idx)) div.classList.add('wrong');
       div.dataset.idx = idx;
-      div.innerHTML = cell.side === 'en'
-        ? `${escapeHtml(cell.text)}<small>tap to pick</small>`
-        : `${escapeHtml(cell.text)}<small>tap to match</small>`;
+      div.textContent = cell.text;
       board.appendChild(div);
     });
+    updateMatchProgress();
   }
   document.getElementById('matchBoard').addEventListener('click', (e) => {
     const div = e.target.closest('.match-card');
@@ -1759,34 +1795,21 @@ __SYNC_SCRIPTS__
       paintMatchBoard();
       if (r.matched.size === r.cards.length) finishMatch();
     } else {
-      // 配对失败 -> 错题
+      // 配对失败 -> 记错题 + 两张瓷砖闪红抖动
       r.errors++;
       document.getElementById('matchErrors').textContent = r.errors;
       const c1 = r.cards.find(x => x.id === r.selected.cell.key);
       const c2 = r.cards.find(x => x.id === r.board[idx].key);
       if (c1) recordResult(c1.id, false);
       if (c2) recordResult(c2.id, false);
+      r.wrongIdx = [r.selected.idx, idx];
       r.selected = null;
       paintMatchBoard();
-      // 错动画
-      const allCards = document.querySelectorAll('.match-card');
-      allCards.forEach(el => el.classList.remove('wrong'));
-      // 临时把 idx 注入到 selected 触发抖动
-      r.selected = { idx };
-      paintMatchBoard();
-      r.selected = null;
-      const cards = document.querySelectorAll('.match-card');
-      cards.forEach(el => el.classList.remove('wrong'));
-      // 找刚点过的两个 idx,加 wrong class
-      const idx2 = idx;
-      const idx1 = (() => {
-        // 找上一个 r.selected
-        return parseInt(div.previousElementSibling?.dataset?.idx || -1, 10);
-      })();
-      // 简单做法:给当前点击的 + r.selected 之前
-      // 实际让 div 抖动通过 r.selected 残留:我们手动给 div 加 wrong
-      div.classList.add('wrong');
-      setTimeout(() => { if (STATE.matchRound === r) paintMatchBoard(); }, 400);
+      setTimeout(() => {
+        if (STATE.matchRound !== r) return; // 已换局/离开视图, 不再回写
+        r.wrongIdx = null;
+        paintMatchBoard();
+      }, 500);
     }
   });
   function finishMatch() {
@@ -1798,11 +1821,19 @@ __SYNC_SCRIPTS__
     document.getElementById('matchScore').textContent = base;
     addXP(base);
     bumpStreak();
-    setTimeout(() => {
-      if (STATE.matchRound !== r) return; // 已离开视图/换局, 不再弹窗重开
-      alert(`本轮完成！\n用时 ${dt.toFixed(1)}s · 错误 ${r.errors} 次 · 得分 ${base}`);
-      startRound();
-    }, 200);
+    updateMatchProgress();
+    const done = document.getElementById('matchDone');
+    if (!done) return;
+    done.innerHTML =
+      `<div class="md-title">🎉 本轮完成！</div>` +
+      `<div class="md-sub">用时 ${dt.toFixed(1)}s · 错误 ${r.errors} 次 · 得分 ${base}</div>` +
+      `<div class="md-actions">` +
+        `<button class="navbtn primary" id="matchAgain">再来一轮</button>` +
+        `<button class="navbtn" data-go="topics">返回主题</button>` +
+      `</div>`;
+    done.style.display = 'block';
+    const again = document.getElementById('matchAgain');
+    if (again) again.addEventListener('click', () => { if (STATE.matchRound === r) startRound(); });
   }
 
   // ============================================================

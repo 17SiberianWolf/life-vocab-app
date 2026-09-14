@@ -54,6 +54,23 @@ const cssChecks = [
 ];
 for (const [n, re] of cssChecks) (re.test(html) ? ok : bad)(n);
 
+// 3b. 碰碰乐 v2 (Duolingo 式配对) 结构与样式
+console.log('-- 3b. 碰碰乐 v2 --');
+const matchV2Checks = [
+  ['进度条元素',            /id="matchProgress"/],
+  ['完成横幅元素',          /id="matchDone"/],
+  ['配对淡出过渡',          /\.match-card\.matched \{[\s\S]{0,260}transform: scale\(\.9\)/],
+  ['进度更新函数',          /function updateMatchProgress/],
+  ['选中态样式',            /\.match-card\.selected/],
+  ['错误态样式',            /\.match-card\.wrong/],
+  ['瓷砖立体下边',          /\.match-card \{[\s\S]{0,180}border-bottom-width: 4px/],
+  ['移动端 3 列',           /\.match-board \{ grid-template-columns: repeat\(3, 1fr\)/],
+  ['游戏视图居中窄栏',      /#view-match, #view-listen, #view-memory, #view-gravity, #view-spell, #view-record \{[\s\S]{0,80}max-width: 640px/],
+  ['一轮 6 组(12 张)',      /Math\.min\(6, all\.length\);[^\n]*瓷砖/],
+  ['已移除冗余 tap 文案',   /^(?![\s\S]*tap to match)(?![\s\S]*tap to pick)[\s\S]*$/],
+];
+for (const [n, re] of matchV2Checks) (re.test(html) ? ok : bad)(n);
+
 // 4. 数据
 console.log('-- 4. 数据 --');
 const data = getAppData(html);
