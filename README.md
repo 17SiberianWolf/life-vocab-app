@@ -27,7 +27,7 @@
 
 ## 一句话定位
 
-把生活 / 职场场景词汇按主题整理，单击「碰碰乐」与英文释义配对，每对成功触发发音——练听、练读、练反应。手机浏览器「添加到主屏幕」即像一个 App。
+把生活 / 职场场景词汇按主题整理，点「碰碰乐」进入 Duolingo 式配对：一轮 6 组、12 张瓷砖，配对成功即变绿淡出并朗读该词——练听、练读、练反应。手机浏览器「添加到主屏幕」即像一个 App。
 
 ---
 
@@ -58,7 +58,7 @@
 | PWA | `manifest.webmanifest` + `sw.js`（wordmatch-v18，network-first + 自动刷新）+ 图标（192/512 + maskable）|
 | 商务卡 | 12 个 M 模块（M1~M12），来源 `pm-english/cards.md` |
 | SRS | 1/2/4/7/15/30 天间隔，SM-2 风格 |
-| 测试 | 8 套件、410 项断言全绿（见 [测试](#测试) 节）|
+| 测试 | 8 套件、421 项断言全绿（见 [测试](#测试) 节）|
 
 > 完整阶段路线图见文末 [历史路线图](#历史路线图)。
 
@@ -176,7 +176,7 @@ python build_index.py            # 重新构建 index.html + dist/
 
 ## 测试
 
-8 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html` 与 `functions/tts.js`），**合计 410 项全绿**为发版门槛：
+8 个轻量断言套件（自研 + Node.js，校验已构建的 `index.html` 与 `functions/tts.js`），**合计 421 项全绿**为发版门槛：
 
 ```bash
 node test-app.js        # 阶段 1：MVP 与 5 个游戏视图（match/listen/memory/gravity/record）

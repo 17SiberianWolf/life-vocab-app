@@ -80,9 +80,9 @@ const STATE = {
 ### 2.4 游戏回合对象
 
 ```js
-// 碰碰乐
+// 碰碰乐 (v1.2.0: 一轮 6 组 = 12 张瓷砖; wrongIdx 驱动错误抖动)
 matchRound = { cards, enBoard, zhBoard, board, errors, score,
-               startTime, timer, selected, matched:Set }
+               startTime, timer, selected, wrongIdx:[i,j]|null, matched:Set }
 
 // 听音
 listenRound = { queue, cursor, correct, streak, maxStreak, answered, current }
