@@ -5,6 +5,29 @@
 
 ---
 
+## [1.1.3] — 2026-09-14 · 碰碰乐（Match）移动端布局修复
+
+### 修复（移动端 / `@media (max-width:600px)`）
+
+- **A · 3 列布局**：`.match-board` 由 `repeat(2,1fr)` → `repeat(3,1fr)`。10 组词（20 张）由 10 行降至 7 行，
+  配合下方紧凑化后整盘一屏可见（此前仅能看到约 4 组）。
+- **B · 卡片紧凑化**：`.match-card` 内边距 10/8→7/5、`min-height` 72→52、字号 14→12、`gap` 8→6；
+  长词组（如 `corporate governance`）用 `word-break: break-word` + `min-height` 自适应换行，不溢出。
+- **C · 顶部功能区瘦身 + 吸顶**：标题行与统计区包裹进 `.match-head`，统计收成一行小字（12px），
+  按钮缩为图标式「↻ 重开 / 🔊 听词」，并 `position: sticky` 贴着全局顶栏下方吸附；
+  吸顶偏移量在 `renderMatch` 中按 `header.top.offsetHeight` 动态写入 `--lv-topbar`，精确贴合（顶栏换行也不错位）。
+- **D ·「乱码」提示修复**：根因是 `.match-card` 原为 `display:flex`（横排），「主文本」与 `<small>tap to match</small>`
+  被挤在同一行。改为 `flex-direction: column` 纵向堆叠，并在移动端 `display:none` 隐藏该冗余提示
+  （选中变蓝 / 配对变绿已给出充分反馈）；桌面端提示一并改为置于文本下方，更规整。
+
+### 说明
+
+- 仅改 CSS + 一处 HTML 包裹 + 一行 JS（吸顶偏移），玩法逻辑 / 数据 / 服务端 TTS 均未变动。
+- `sw.js`：`CACHE_NAME` `v18` → `v19`（客户端有改动，需 bump）。
+- 8 套件 **410 项**测试全绿（布局改动不影响既有断言）。
+
+---
+
 ## [1.1.2] — 2026-09-11 · 「✍ 拼写」新增「简单 / 地狱」双模式
 
 ### 新增

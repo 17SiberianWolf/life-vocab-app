@@ -149,6 +149,8 @@
     50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } 100% { transform: translateX(0); }
   }
   .match-card small, .listen-option small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 400; }
+  /* 碰碰乐卡内「主文本 + 提示」纵向堆叠, 避免移动端被 flex 横排挤成"乱码"(D) */
+  .match-card { flex-direction: column; word-break: break-word; line-height: 1.25; }
 
   /* Listen 中心发音区 */
   .listen-stage {
@@ -335,9 +337,20 @@
     margin-bottom: 10px; line-height: 1.3; word-break: break-word; }
 
   @media (max-width: 600px) {
-    .match-board, .listen-board { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    /* A: 碰碰乐移动端 2 列 → 3 列, 10 组词(20 张)降至 7 行, 一屏可见 */
+    .match-board { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .listen-board { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .memory-board { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .match-card, .listen-option { padding: 10px 8px; min-height: 72px; font-size: 14px; }
+    /* B: 卡片紧凑化(高度/内边距/字号下调) */
+    .match-card { padding: 7px 5px; min-height: 52px; font-size: 12px; }
+    .listen-option { padding: 10px 8px; min-height: 56px; font-size: 14px; }
+    /* D: 移动端隐藏冗余 "tap to match" 提示(选中变蓝 / 配对变绿已给反馈) */
+    .match-card small { display: none; }
+    /* C: 顶部功能区瘦身 + 吸顶(统计收成一行小字, 贴着全局顶栏下方吸附) */
+    .match-head { position: sticky; top: var(--lv-topbar, 96px); z-index: 20;
+      background: var(--bg); padding: 4px 0 6px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .game-stats { gap: 10px; font-size: 12px; padding: 4px 0; }
+    #view-match > p { display: none; }
     main { padding: 12px; }
     header.top { padding: 8px 12px; }
     .word-card { padding: 12px; }
@@ -488,17 +501,19 @@
   <!-- 6 个游戏视图 (Match / Listen / Memory / Gravity / Spell / Browse) -->
 
   <section id="view-match" class="view">
-    <div class="view-title-row">
-      <button class="navbtn" data-go="topics">← 主题</button>
-      <h2 id="matchTitle">Match 碰碰乐</h2>
-    </div>
-    <div class="game-stats">
-      <div>本轮词数:<b id="matchRoundSize">8</b></div>
-      <div>用时:<b id="matchTimer">0.0s</b></div>
-      <div>错误:<b id="matchErrors">0</b></div>
-      <div>得分:<b id="matchScore">0</b></div>
-      <button class="navbtn" id="matchRestart">重新开始</button>
-      <button class="navbtn" id="matchSpeakEn">听本轮词</button>
+    <div class="match-head">
+      <div class="view-title-row">
+        <button class="navbtn" data-go="topics">← 主题</button>
+        <h2 id="matchTitle">Match 碰碰乐</h2>
+      </div>
+      <div class="game-stats">
+        <div>本轮词数:<b id="matchRoundSize">8</b></div>
+        <div>用时:<b id="matchTimer">0.0s</b></div>
+        <div>错误:<b id="matchErrors">0</b></div>
+        <div>得分:<b id="matchScore">0</b></div>
+        <button class="navbtn" id="matchRestart">↻ 重开</button>
+        <button class="navbtn" id="matchSpeakEn">🔊 听词</button>
+      </div>
     </div>
     <div class="match-board" id="matchBoard"></div>
     <p style="margin-top:14px; font-size:13px; color: var(--text-soft);">
@@ -2410,6 +2425,9 @@
     const topic = STATE.topics.find(t => t.topic_id === topicId);
     document.getElementById('matchTitle').innerHTML =
       `${escapeHtml(topic?.name_zh || '')} <span style="color:var(--text-muted);font-weight:400;font-size:13px;">Match</span>`;
+    // C: 把吸顶偏移量设为全局顶栏实际高度, 使 match-head 精确贴在其下方(移动端)
+    const topbar = document.querySelector('header.top');
+    if (topbar) document.documentElement.style.setProperty('--lv-topbar', topbar.offsetHeight + 'px');
     startRound();
   }
   document.getElementById('matchRestart').addEventListener('click', startRound);
